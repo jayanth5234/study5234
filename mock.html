@@ -1,0 +1,839 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSC CGL Mock Test Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body data-theme="light" style="font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #ea580c, #dc2626); color: #ffffff; min-height: 100vh; transition: background 0.3s, color 0.3s;">
+    <!-- Header -->
+    <header class="fixed top-0 left-0 w-full py-4 px-6 flex justify-between items-center z-40" style="background: rgba(234, 88, 12, 0.2); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+        <div class="flex items-center gap-3">
+            <button id="sidebarToggle" class="text-white md:hidden" aria-label="Toggle Sidebar">
+                <i class="fas fa-bars text-2xl"></i>
+            </button>
+            <h1 class="text-2xl font-bold text-white">SSC CGL Mock Test Analysis</h1>
+        </div>
+        <button id="themeToggle" class="rounded-full p-2" aria-label="Toggle Theme" style="background: #000000; box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3), -5px -5px 15px rgba(255, 255, 255, 0.1); transition: all 0.3s ease; position: relative;">
+            <i class="fas fa-moon text-xl text-white"></i>
+            <span class="absolute bottom-125 left-1/2 transform -translate-x-1/2 bg-black text-white text-center rounded px-2 py-1 opacity-0 transition-opacity" style="visibility: hidden; padding: 5px 10px; z-index: 1; bottom: 125%; left: 50%; transform: translateX(-50%);">Toggle Dark Mode</span>
+        </button>
+    </header>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed top-0 left-0 h-full w-64 pt-20 px-4 transform md:translate-x-0 -translate-x-full z-30" style="background: rgba(234, 88, 12, 0.2); backdrop-filter: blur(10px); transition: transform 0.3s ease;">
+        <nav class="space-y-4">
+            <a href="#formSection" class="block text-white font-medium py-2 px-4 rounded-lg hover:bg-white hover:bg-opacity-10 transition">
+                <i class="fas fa-plus mr-2"></i> Add Test
+            </a>
+            <a href="#graphSection" class="block text-white font-medium py-2 px-4 rounded-lg hover:bg-white hover:bg-opacity-10 transition">
+                <i class="fas fa-chart-line mr-2"></i> Score Graph Analysis
+            </a>
+            <a href="#analysisSection" class="block text-white font-medium py-2 px-4 rounded-lg hover:bg-white hover:bg-opacity-10 transition">
+                <i class="fas fa-table mr-2"></i> Analysis
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="pt-24 px-4 md:ml-64 transition-all duration-300">
+        <!-- Form Section -->
+        <section id="formSection" class="rounded-2xl p-6 mb-8" style="background: rgba(234, 88, 12, 0.2); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); transition: transform 0.3s ease, box-shadow 0.3s ease; animation: fadeIn 0.5s ease-in-out;">
+            <h2 class="text-2xl font-semibold mb-6">Enter Mock Test Details</h2>
+            <div class="space-y-4">
+                <div>
+                    <label for="testName" class="block text-sm font-medium">Mock Test Name:</label>
+                    <input type="text" id="testName" class="mt-1 w-full p-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-300" required aria-required="true">
+                </div>
+                <div>
+                    <label for="testDate" class="block text-sm font-medium">Test Date:</label>
+                    <input type="date" id="testDate" class="mt-1 w-full p-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:ring-2 focus:ring-orange-500 text-white" required aria-required="true">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium">Quantitative Aptitude (25 Questions):</label>
+                    <div class="flex gap-4">
+                        <div class="w-1/2">
+                            <label for="quantCorrect" class="block text-sm">Correct Answers:</label>
+                            <input type="number" id="quantCorrect" min="0" max="25" required class="mt-1 w-full p-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:ring-2 focus:ring-orange-500 text-white" aria-required="true">
+                        </div>
+                        <div class="w-1/2">
+                            <label for="quantIncorrect" class="block text-sm">Incorrect Answers:</label>
+                            <input type="number" id="quantIncorrect" min="0" max="25" required class="mt-1 w-full p-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:ring-2 focus:ring-orange-500 text-white" aria-required="true">
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium">Reasoning (25 Questions):</label>
+                    <div class="flex gap-4">
+                        <div class="w-1/2">
+                            <label for="reasoningCorrect" class="block text-sm">Correct Answers:</label>
+                            <input type="number" id="reasoningCorrect" min="0" max="25" required class="mt-1 w-full p-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:ring-2 focus:ring-orange-500 text-white" aria-required="true">
+                        </div>
+                        <div class="w-1/2">
+                            <label for="reasoningIncorrect" class="block text-sm">Incorrect Answers:</label>
+                            <input type="number" id="reasoningIncorrect" min="0" max="25" required class="mt-1 w-full p-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:ring-2 focus:ring-orange-500 text-white" aria-required="true">
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium">English (25 Questions):</label>
+                    <div class="flex gap-4">
+                        <div class="w-1/2">
+                            <label for="englishCorrect" class="block text-sm">Correct Answers:</label>
+                            <input type="number" id="englishCorrect" min="0" max="25" required class="mt-1 w-full p-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:ring-2 focus:ring-orange-500 text-white" aria-required="true">
+                        </div>
+                        <div class="w-1/2">
+                            <label for="englishIncorrect" class="block text-sm">Incorrect Answers:</label>
+                            <input type="number" id="englishIncorrect" min="0" max="25" required class="mt-1 w-full p-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:ring-2 focus:ring-orange-500 text-white" aria-required="true">
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium">General Awareness (25 Questions):</label>
+                    <div class="flex gap-4">
+                        <div class="w-1/2">
+                            <label for="gaCorrect" class="block text-sm">Correct Answers:</label>
+                            <input type="number" id="gaCorrect" min="0" max="25" required class="mt-1 w-full p-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:ring-2 focus:ring-orange-500 text-white" aria-required="true">
+                        </div>
+                        <div class="w-1/2">
+                            <label for="gaIncorrect" class="block text-sm">Incorrect Answers:</label>
+                            <input type="number" id="gaIncorrect" min="0" max="25" required class="mt-1 w-full p-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:ring-2 focus:ring-orange-500 text-white" aria-required="true">
+                        </div>
+                    </div>
+                </div>
+                
+                <button onclick="addTest()" class="w-full text-orange-400 font-medium py-3 rounded-lg" aria-label="Submit Test Details" style="background: #000000; box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3), -5px -5px 15px rgba(255, 255, 255, 0.1); transition: all 0.3s ease; position: relative;">
+                    Submit
+                    <span class="absolute bottom-125 left-1/2 transform -translate-x-1/2 bg-black text-white text-center rounded px-2 py-1 opacity-0 transition-opacity" style="visibility: hidden; padding: 5px 10px; z-index: 1; bottom: 125%; left: 50%; transform: translateX(-50%);">Add a new mock test</span>
+                </button>
+            </div>
+        </section>
+        
+        <!-- Score Graph Analysis Section -->
+        <section id="graphSection" class="rounded-2xl p-6 mb-8" style="background: rgba(234, 88, 12, 0.2); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); transition: transform 0.3s ease, box-shadow 0.3s ease; animation: fadeIn 0.5s ease-in-out;">
+            <h2 class="text-2xl font-semibold mb-6">Score Graph Analysis</h2>
+            <div class="flex flex-wrap gap-3 mb-6">
+                <button onclick="showGraph('total')" class="text-orange-400 font-medium py-2 px-4 rounded-lg flex items-center" aria-label="Show Total Score Graph" style="background: #000000; box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3), -5px -5px 15px rgba(255, 255, 255, 0.1); transition: all 0.3s ease; position: relative;">
+                    <i class="fas fa-sigma mr-2"></i> Total
+                    <span class="absolute bottom-125 left-1/2 transform -translate-x-1/2 bg-black text-white text-center rounded px-2 py-1 opacity-0 transition-opacity" style="visibility: hidden; padding: 5px 10px; z-index: 1; bottom: 125%; left: 50%; transform: translateX(-50%);">View total score trend</span>
+                </button>
+                <button onclick="showGraph('quant')" class="text-orange-300 font-medium py-2 px-4 rounded-lg flex items-center" aria-label="Show Quantitative Score Graph" style="background: #000000; box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3), -5px -5px 15px rgba(255, 255, 255, 0.1); transition: all 0.3s ease; position: relative;">
+                    <i class="fas fa-calculator mr-2"></i> Quantitative
+                    <span class="absolute bottom-125 left-1/2 transform -translate-x-1/2 bg-black text-white text-center rounded px-2 py-1 opacity-0 transition-opacity" style="visibility: hidden; padding: 5px 10px; z-index: 1; bottom: 125%; left: 50%; transform: translateX(-50%);">View Quantitative Aptitude trend</span>
+                </button>
+                <button onclick="showGraph('reasoning')" class="text-orange-200 font-medium py-2 px-4 rounded-lg flex items-center" aria-label="Show Reasoning Score Graph" style="background: #000000; box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3), -5px -5px 15px rgba(255, 255, 255, 0.1); transition: all 0.3s ease; position: relative;">
+                    <i class="fas fa-puzzle-piece mr-2"></i> Reasoning
+                    <span class="absolute bottom-125 left-1/2 transform -translate-x-1/2 bg-black text-white text-center rounded px-2 py-1 opacity-0 transition-opacity" style="visibility: hidden; padding: 5px 10px; z-index: 1; bottom: 125%; left: 50%; transform: translateX(-50%);">View Reasoning trend</span>
+                </button>
+                <button onclick="showGraph('english')" class="text-orange-100 font-medium py-2 px-4 rounded-lg flex items-center" aria-label="Show English Score Graph" style="background: #000000; box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3), -5px -5px 15px rgba(255, 255, 255, 0.1); transition: all 0.3s ease; position: relative;">
+                    <i class="fas fa-book mr-2"></i> English
+                    <span class="absolute bottom-125 left-1/2 transform -translate-x-1/2 bg-black text-white text-center rounded px-2 py-1 opacity-0 transition-opacity" style="visibility: hidden; padding: 5px 10px; z-index: 1; bottom: 125%; left: 50%; transform: translateX(-50%);">View English trend</span>
+                </button>
+                <button onclick="showGraph('ga')" class="text-orange-50 font-medium py-2 px-4 rounded-lg flex items-center" aria-label="Show General Awareness Score Graph" style="background: #000000; box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3), -5px -5px 15px rgba(255, 255, 255, 0.1); transition: all 0.3s ease; position: relative;">
+                    <i class="fas fa-globe mr-2"></i> General Awareness
+                    <span class="absolute bottom-125 left-1/2 transform -translate-x-1/2 bg-black text-white text-center rounded px-2 py-1 opacity-0 transition-opacity" style="visibility: hidden; padding: 5px 10px; z-index: 1; bottom: 125%; left: 50%; transform: translateX(-50%);">View General Awareness trend</span>
+                </button>
+            </div>
+            <div id="scoresGraphContainer" class="hidden" style="position: relative;">
+                <h3 class="text-lg font-semibold mb-4">Scores for <span id="selectedGraphName"></span></h3>
+                <div id="graphSpinner" class="hidden" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 4px solid rgba(255, 255, 255, 0.3); border-top: 4px solid #ea580c; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
+                <canvas id="scoresChart" class="w-full h-64" style="background: rgba(255, 255, 255, 0.03); border-radius: 10px; padding: 10px; animation: chartFadeIn 1s ease-in-out;" aria-label="Score Trend Graph"></canvas>
+            </div>
+        </section>
+
+        <!-- Analysis Section -->
+        <section id="analysisSection" class="rounded-2xl p-6 mb-8" style="background: rgba(234, 88, 12, 0.2); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); transition: transform 0.3s ease, box-shadow 0.3s ease; animation: fadeIn 0.5s ease-in-out;">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold">Analysis</h2>
+                <div class="flex gap-3">
+                    <button onclick="exportToCSV()" class="text-orange-400 font-medium py-2 px-4 rounded-lg flex items-center" aria-label="Export Data to CSV" style="background: #000000; box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3), -5px -5px 15px rgba(255, 255, 255, 0.1); transition: all 0.3s ease; position: relative;">
+                        <i class="fas fa-download mr-2"></i> Export
+                        <span class="absolute bottom-125 left-1/2 transform -translate-x-1/2 bg-black text-white text-center rounded px-2 py-1 opacity-0 transition-opacity" style="visibility: hidden; padding: 5px 10px; z-index: 1; bottom: 125%; left: 50%; transform: translateX(-50%);">Export data to CSV</span>
+                    </button>
+                    <button onclick="openResetModal()" class="text-orange-400 font-medium py-2 px-4 rounded-lg flex items-center" aria-label="Reset All Data" style="background: #000000; box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3), -5px -5px 15px rgba(255, 255, 255, 0.1); transition: all 0.3s ease; position: relative;">
+                        <i class="fas fa-trash-alt mr-2"></i> Reset
+                        <span class="absolute bottom-125 left-1/2 transform -translate-x-1/2 bg-black text-white text-center rounded px-2 py-1 opacity-0 transition-opacity" style="visibility: hidden; padding: 5px 10px; z-index: 1; bottom: 125%; left: 50%; transform: translateX(-50%);">Reset all test data</span>
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table id="testTable" class="w-full border-collapse">
+                    <thead>
+                        <tr style="background: rgba(255, 255, 255, 0.05);">
+                            <th class="border border-white border-opacity-10 p-3 text-sm font-semibold">Date & Test Name</th>
+                            <th class="border border-white border-opacity-10 p-3 text-sm font-semibold">Quantitative</th>
+                            <th class="border border-white border-opacity-10 p-3 text-sm font-semibold">Reasoning</th>
+                            <th class="border border-white border-opacity-10 p-3 text-sm font-semibold">English</th>
+                            <th class="border border-white border-opacity-10 p-3 text-sm font-semibold">General Awareness</th>
+                            <th class="border border-white border-opacity-10 p-3 text-sm font-semibold">Total</th>
+                            <th class="border border-white border-opacity-10 p-3 text-sm font-semibold">Percentage</th>
+                            <th class="border border-white border-opacity-10 p-3 text-sm font-semibold">Feedback</th>
+                            <th class="border border-white border-opacity-10 p-3 text-sm font-semibold">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="testTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Detailed Analysis Section -->
+         <section id="detailedAnalysis" class="rounded-2xl p-6 mb-8 hidden" style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(0, 0, 0, 0.1); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); transition: transform 0.3s ease, box-shadow 0.3s ease; animation: fadeIn 0.5s ease-in-out;">
+        <h2 class="text-2xl font-semibold mb-6 text-black">Detailed Analysis for <span id="selectedDate" class="text-black"></span> (<span id="selectedTestName" class="text-black"></span>)</h2>
+        
+        <div class="flex flex-col lg:flex-row gap-6 mb-6">
+            <div class="w-full lg:w-1/3">
+                <h3 class="text-lg font-semibold mb-4 text-black">Question Stats</h3>
+                <div class="flex flex-wrap gap-4">
+                    <div class="flex items-center bg-white bg-opacity-80 rounded-full px-4 py-2 border border-gray-200">
+                        <span class="w-8 h-8 rounded-full bg-orange-600 flex items-center justify-center text-white mr-2">🎯</span>
+                        <p class="text-sm text-black">Score: <span id="detailScore" class="font-medium"></span>/200</p>
+                    </div>
+                    <div class="flex items-center bg-white bg-opacity-80 rounded-full px-4 py-2 border border-gray-200">
+                        <span class="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white mr-2">📝</span>
+                        <p class="text-sm text-black">Attempted: <span id="detailAttempted" class="font-medium"></span>/100</p>
+                    </div>
+                    <div class="flex items-center bg-white bg-opacity-80 rounded-full px-4 py-2 border border-gray-200">
+                        <span class="w-8 h-8 rounded-full bg-orange-400 flex items-center justify-center text-white mr-2">✔️</span>
+                        <p class="text-sm text-black">Accuracy: <span id="detailAccuracy" class="font-medium"></span>%</p>
+                    </div>
+                    <div class="flex items-center bg-white bg-opacity-80 rounded-full px-4 py-2 border border-gray-200">
+                        <span class="w-8 h-8 rounded-full bg-orange-300 flex items-center justify-center text-white mr-2">📈</span>
+                        <p class="text-sm text-black">Percentage: <span id="detailPercentage" class="font-medium"></span>%</p>
+                    </div>
+                </div>
+            </div>
+            <div class="w-full lg:w-2/3" style="position: relative;">
+                <div id="statsSpinner" class="hidden" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 4px solid rgba(0, 0, 0, 0.3); border-top: 4px solid #ea580c; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
+                <canvas id="statsChart" class="w-full h-64" style="background: rgba(255, 255, 255, 0.8); border-radius: 10px; padding: 10px; border: 1px solid rgba(0, 0, 0, 0.1);" aria-label="Question Stats Bar Chart"></canvas>
+            </div>
+        </div>
+
+        <h3 class="text-lg font-semibold mb-4 text-black">Sectional Summary</h3>
+        <div class="overflow-x-auto">
+            <table id="sectionalTable" class="w-full border-collapse">
+                <thead>
+                    <tr style="background: rgba(0, 0, 0, 0.05);">
+                        <th class="border border-black border-opacity-10 p-3 text-sm font-semibold text-black">Section Name</th>
+                        <th class="border border-black border-opacity-10 p-3 text-sm font-semibold text-black">Score</th>
+                        <th class="border border-black border-opacity-10 p-3 text-sm font-semibold text-black">Cutoff Score</th>
+                        <th class="border border-black border-opacity-10 p-3 text-sm font-semibold text-black">Attempted</th>
+                        <th class="border border-black border-opacity-10 p-3 text-sm font-semibold text-black">Correct</th>
+                        <th class="border border-black border-opacity-10 p-3 text-sm font-semibold text-black">Incorrect</th>
+                        <th class="border border-black border-opacity-10 p-3 text-sm font-semibold text-black">Unattempted</th>
+                    </tr>
+                </thead>
+                <tbody id="sectionalTableBody" class="text-black"></tbody>
+            </table>
+        </div>
+    </section>
+    </main>
+
+    <!-- Feedback Modal -->
+    <div id="feedbackModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden" role="dialog" aria-labelledby="feedbackModalTitle">
+        <div class="rounded-2xl p-6 w-full max-w-md" style="background: rgba(234, 88, 12, 0.2); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1);">
+            <h3 id="feedbackModalTitle" class="text-xl font-semibold mb-4">Feedback for <span id="feedbackTestName"></span></h3>
+            <textarea id="feedbackInput" class="w-full p-3 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-300" rows="5" placeholder="Write your feedback here..." aria-label="Feedback Input"></textarea>
+            <div class="flex justify-end gap-3 mt-4">
+                <button onclick="closeFeedbackModal()" class="text-gray-400 font-medium py-2 px-4 rounded-lg" style="background: #000000; box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3), -5px -5px 15px rgba(255, 255, 255, 0.1); transition: all 0.3s ease; position: relative;" aria-label="Cancel Feedback">Cancel</button>
+                <button onclick="saveFeedback()" class="text-orange-400 font-medium py-2 px-4 rounded-lg" style="background: #000000; box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3), -5px -5px 15px rgba(255, 255, 255, 0.1); transition: all 0.3s ease; position: relative;" aria-label="Save Feedback">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden" role="dialog" aria-labelledby="deleteModalTitle">
+        <div class="rounded-2xl p-6 w-full max-w-md" style="background: rgba(234, 88, 12, 0.2); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1);">
+            <h3 id="deleteModalTitle" class="text-xl font-semibold mb-4">Confirm Deletion</h3>
+            <p class="mb-4">Are you sure you want to delete <span id="deleteTestName" class="font-medium"></span>?</p>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeDeleteModal()" class="text-gray-400 font-medium py-2 px-4 rounded-lg" style="background: #000000; box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3), -5px -5px 15px rgba(255, 255, 255, 0.1); transition: all 0.3s ease; position: relative;" aria-label="Cancel Deletion">Cancel</button>
+                <button onclick="confirmDelete()" class="text-orange-400 font-medium py-2 px-4 rounded-lg" style="background: #000000; box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3), -5px -5px 15px rgba(255, 255, 255, 0.1); transition: all 0.3s ease; position: relative;" aria-label="Confirm Deletion">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Confirmation Modal -->
+    <div id="resetModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden" role="dialog" aria-labelledby="resetModalTitle">
+        <div class="rounded-2xl p-6 w-full max-w-md" style="background: rgba(234, 88, 12, 0.2); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1);">
+            <h3 id="resetModalTitle" class="text-xl font-semibold mb-4">Confirm Reset</h3>
+            <p class="mb-4">Are you sure you want to reset all test data? This action cannot be undone.</p>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeResetModal()" class="text-gray-400 font-medium py-2 px-4 rounded-lg" style="background: #000000; box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3), -5px -5px 15px rgba(255, 255, 255, 0.1); transition: all 0.3s ease; position: relative;" aria-label="Cancel Reset">Cancel</button>
+                <button onclick="confirmReset()" class="text-orange-400 font-medium py-2 px-4 rounded-lg" style="background: #000000; box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3), -5px -5px 15px rgba(255, 255, 255, 0.1); transition: all 0.3s ease; position: relative;" aria-label="Confirm Reset">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State Management
+        const state = {
+            tests: [],
+            statsChart: null,
+            scoresChart: null,
+            currentFeedbackIndex: null,
+            currentDeleteIndex: null,
+            currentGraphType: null
+        };
+
+        // DOM Elements
+        const DOM = {
+            sidebar: document.getElementById('sidebar'),
+            sidebarToggle: document.getElementById('sidebarToggle'),
+            themeToggle: document.getElementById('themeToggle'),
+            testTableBody: document.getElementById('testTableBody'),
+            scoresGraphContainer: document.getElementById('scoresGraphContainer'),
+            selectedGraphName: document.getElementById('selectedGraphName'),
+            graphSpinner: document.getElementById('graphSpinner'),
+            statsSpinner: document.getElementById('statsSpinner'),
+            detailedAnalysis: document.getElementById('detailedAnalysis'),
+            selectedDate: document.getElementById('selectedDate'),
+            selectedTestName: document.getElementById('selectedTestName'),
+            detailScore: document.getElementById('detailScore'),
+            detailAttempted: document.getElementById('detailAttempted'),
+            detailAccuracy: document.getElementById('detailAccuracy'),
+            detailPercentage: document.getElementById('detailPercentage'),
+            sectionalTableBody: document.getElementById('sectionalTableBody'),
+            feedbackModal: document.getElementById('feedbackModal'),
+            feedbackTestName: document.getElementById('feedbackTestName'),
+            feedbackInput: document.getElementById('feedbackInput'),
+            deleteModal: document.getElementById('deleteModal'),
+            deleteTestName: document.getElementById('deleteTestName'),
+            resetModal: document.getElementById('resetModal')
+        };
+
+        // Utility Functions
+        const utils = {
+            saveToLocalStorage: () => localStorage.setItem('mockTests', JSON.stringify(state.tests)),
+            loadFromLocalStorage: () => {
+                const savedTests = localStorage.getItem('mockTests');
+                if (savedTests) state.tests = JSON.parse(savedTests);
+            },
+            showSpinner: (spinner) => spinner.style.display = 'block',
+            hideSpinner: (spinner) => spinner.style.display = 'none',
+            delay: (ms) => new Promise(resolve => setTimeout(resolve, ms))
+        };
+
+        // Event Listeners
+        DOM.themeToggle.addEventListener('click', () => {
+            const body = document.body;
+            const currentTheme = body.getAttribute('data-theme');
+            body.setAttribute('data-theme', currentTheme === 'light' ? 'dark' : 'light');
+            DOM.themeToggle.innerHTML = `<i class="fas fa-${currentTheme === 'light' ? 'sun' : 'moon'} text-xl text-white"></i><span class="absolute bottom-125 left-1/2 transform -translate-x-1/2 bg-black text-white text-center rounded px-2 py-1 opacity-0 transition-opacity" style="visibility: hidden; padding: 5px 10px; z-index: 1; bottom: 125%; left: 50%; transform: translateX(-50%);">Toggle ${currentTheme === 'light' ? 'Light' : 'Dark'} Mode</span>`;
+            if (state.currentGraphType) showGraph(state.currentGraphType);
+            if (!DOM.detailedAnalysis.classList.contains('hidden')) {
+                const index = state.tests.findIndex(test => test.date === DOM.selectedDate.textContent);
+                showDetailedAnalysis(index);
+            }
+        });
+
+        DOM.sidebarToggle.addEventListener('click', () => {
+            DOM.sidebar.classList.toggle('-translate-x-full');
+        });
+
+        // Modal Keyboard Accessibility
+        [DOM.feedbackModal, DOM.deleteModal, DOM.resetModal].forEach(modal => {
+            modal.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    if (modal.id === 'feedbackModal') closeFeedbackModal();
+                    if (modal.id === 'deleteModal') closeDeleteModal();
+                    if (modal.id === 'resetModal') closeResetModal();
+                }
+            });
+        });
+
+        // Load tests on page load
+        window.onload = () => {
+            utils.loadFromLocalStorage();
+            updateTable();
+        };
+
+        // Core Functions
+        function addTest() {
+            const inputs = {
+                name: document.getElementById('testName').value,
+                testDate: document.getElementById('testDate').value,
+                quantCorrect: parseFloat(document.getElementById('quantCorrect').value),
+                quantIncorrect: parseFloat(document.getElementById('quantIncorrect').value),
+                reasoningCorrect: parseFloat(document.getElementById('reasoningCorrect').value),
+                reasoningIncorrect: parseFloat(document.getElementById('reasoningIncorrect').value),
+                englishCorrect: parseFloat(document.getElementById('englishCorrect').value),
+                englishIncorrect: parseFloat(document.getElementById('englishIncorrect').value),
+                gaCorrect: parseFloat(document.getElementById('gaCorrect').value),
+                gaIncorrect: parseFloat(document.getElementById('gaIncorrect').value)
+            };
+
+            // Input validation
+            if (Object.values(inputs).some(val => !val && val !== 0)) {
+                alert("Please fill all fields correctly.");
+                return;
+            }
+
+            const sections = [
+                { name: 'Quantitative Aptitude', correct: inputs.quantCorrect, incorrect: inputs.quantIncorrect },
+                { name: 'Reasoning', correct: inputs.reasoningCorrect, incorrect: inputs.reasoningIncorrect },
+                { name: 'English', correct: inputs.englishCorrect, incorrect: inputs.englishIncorrect },
+                { name: 'General Awareness', correct: inputs.gaCorrect, incorrect: inputs.gaIncorrect }
+            ];
+
+            for (const section of sections) {
+                if (section.correct + section.incorrect > 25) {
+                    alert(`Correct + Incorrect for ${section.name} must not exceed 25.`);
+                    return;
+                }
+                if (section.correct < 0 || section.incorrect < 0) {
+                    alert("Correct and Incorrect answers cannot be negative.");
+                    return;
+                }
+            }
+
+            const test = {
+                name: inputs.name,
+                date: inputs.testDate,
+                quant: calculateSection(inputs.quantCorrect, inputs.quantIncorrect),
+                reasoning: calculateSection(inputs.reasoningCorrect, inputs.reasoningIncorrect),
+                english: calculateSection(inputs.englishCorrect, inputs.englishIncorrect),
+                ga: calculateSection(inputs.gaCorrect, inputs.gaIncorrect),
+                feedback: ''
+            };
+
+            test.total = (parseFloat(test.quant.score) + parseFloat(test.reasoning.score) + 
+                         parseFloat(test.english.score) + parseFloat(test.ga.score)).toFixed(2);
+            test.percentage = ((test.total / 200) * 100).toFixed(2);
+
+            state.tests.push(test);
+            updateTable();
+            utils.saveToLocalStorage();
+            clearForm();
+        }
+
+        function calculateSection(correct, incorrect) {
+            const unattempted = 25 - (correct + incorrect);
+            const score = (correct * 2) - (incorrect * 0.5);
+            return {
+                score: score.toFixed(2),
+                correct,
+                incorrect,
+                unattempted,
+                attempted: correct + incorrect
+            };
+        }
+
+        function updateTable() {
+            DOM.testTableBody.innerHTML = '';
+            state.tests.forEach((test, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="border border-white border-opacity-10 p-3 cursor-pointer hover:underline" onclick="showDetailedAnalysis(${index})" tabindex="0" aria-label="View detailed analysis for ${test.date} ${test.name}">${test.date} (${test.name})</td>
+                    <td class="border border-white border-opacity-10 p-3" title="Quantitative Score: ${test.quant.score}">${test.quant.score}</td>
+                    <td class="border border-white border-opacity-10 p-3" title="Reasoning Score: ${test.reasoning.score}">${test.reasoning.score}</td>
+                    <td class="border border-white border-opacity-10 p-3" title="English Score: ${test.english.score}">${test.english.score}</td>
+                    <td class="border border-white border-opacity-10 p-3" title="General Awareness Score: ${test.ga.score}">${test.ga.score}</td>
+                    <td class="border border-white border-opacity-10 p-3" title="Total Score: ${test.total}">${test.total}</td>
+                    <td class="border border-white border-opacity-10 p-3" title="Percentage: ${test.percentage}%">${test.percentage}%</td>
+                    <td class="border border-white border-opacity-10 p-3">
+                        <button onclick="openFeedbackModal(${index})" class="text-orange-400 font-medium py-1 px-3 rounded-lg" style="background: #000000; box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3), -5px -5px 15px rgba(255, 255, 255, 0.1); transition: all 0.3s ease; position: relative;" aria-label="${test.feedback ? 'View/Edit' : 'Add'} Feedback for ${test.name}">
+                            <i class="fas fa-comment mr-1"></i> ${test.feedback ? 'View/Edit' : 'Add'}
+                        </button>
+                    </td>
+                    <td class="border border-white border-opacity-10 p-3">
+                        <button onclick="deleteTest(${index})" class="text-orange-400 font-medium py-1 px-3 rounded-lg" style="background: #000000; box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3), -5px -5px 15px rgba(255, 255, 255, 0.1); transition: all 0.3s ease; position: relative;" aria-label="Delete ${test.name}">
+                            <i class="fas fa-trash mr-1"></i> Delete
+                        </button>
+                    </td>
+                `;
+                DOM.testTableBody.appendChild(row);
+            });
+
+            if (state.currentGraphType) showGraph(state.currentGraphType);
+        }
+
+        async function showGraph(type) {
+            state.currentGraphType = type;
+            DOM.scoresGraphContainer.classList.remove('hidden');
+            DOM.selectedGraphName.textContent = graphInfo[type].name;
+
+            utils.showSpinner(DOM.graphSpinner);
+            if (state.scoresChart) state.scoresChart.destroy();
+
+            await utils.delay(500); // Simulate loading
+
+            const ctx = document.getElementById('scoresChart').getContext('2d');
+            const labels = state.tests.map(test => `${test.name} (${test.date})`);
+            const data = state.tests.map(test => type === 'total' ? parseFloat(test.total) : parseFloat(test[type].score));
+            const isDarkMode = document.body.getAttribute('data-theme') === 'dark';
+
+            state.scoresChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: graphInfo[type].name,
+                        data,
+                        borderColor: graphInfo[type].borderColor,
+                        backgroundColor: graphInfo[type].color,
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 3,
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        pointBackgroundColor: graphInfo[type].borderColor
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: graphInfo[type].max,
+                            title: {
+                                display: true,
+                                text: graphInfo[type].yAxisTitle,
+                                color: isDarkMode ? '#e5e7eb' : '#ffffff'
+                            },
+                            ticks: { color: isDarkMode ? '#e5e7eb' : '#ffffff' },
+                            grid: { color: isDarkMode ? 'rgba(229, 231, 235, 0.05)' : 'rgba(255, 255, 255, 0.05)' }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Mock Tests',
+                                color: isDarkMode ? '#e5e7eb' : '#ffffff'
+                            },
+                            ticks: { color: isDarkMode ? '#e5e7eb' : '#ffffff' },
+                            grid: { color: isDarkMode ? 'rgba(229, 231, 235, 0.05)' : 'rgba(255, 255, 255, 0.05)' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: { color: isDarkMode ? '#e5e7eb' : '#ffffff' }
+                        },
+                        tooltip: {
+                            backgroundColor: isDarkMode ? '#1e293b' : '#000000',
+                            titleColor: isDarkMode ? '#e5e7eb' : '#ffffff',
+                            bodyColor: isDarkMode ? '#e5e7eb' : '#ffffff',
+                            borderColor: isDarkMode ? '#334155' : '#ea580c',
+                            borderWidth: 1
+                        },
+                        datalabels: {
+                            color: isDarkMode ? '#e5e7eb' : '#ffffff',
+                            anchor: 'end',
+                            align: 'top',
+                            offset: 5,
+                            formatter: (value) => value.toFixed(2)
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+
+            utils.hideSpinner(DOM.graphSpinner);
+        }
+
+        const graphInfo = {
+            total: { name: 'Total', color: 'rgba(234, 88, 12, 0.3)', borderColor: '#ea580c', max: 200, yAxisTitle: 'Total Score (out of 200)' },
+            quant: { name: 'Quantitative Aptitude', color: 'rgba(249, 115, 22, 0.3)', borderColor: '#f97316', max: 50, yAxisTitle: 'Score (out of 50)' },
+            reasoning: { name: 'Reasoning', color: 'rgba(253, 186, 116, 0.3)', borderColor: '#fdba74', max: 50, yAxisTitle: 'Score (out of 50)' },
+            english: { name: 'English', color: 'rgba(254, 215, 170, 0.3)', borderColor: '#fed7aa', max: 50, yAxisTitle: 'Score (out of 50)' },
+            ga: { name: 'General Awareness', color: 'rgba(255, 237, 213, 0.3)', borderColor: '#ffedd5', max: 50, yAxisTitle: 'Score (out of 50)' }
+        };
+
+        function deleteTest(index) {
+            state.currentDeleteIndex = index;
+            const test = state.tests[index];
+            DOM.deleteTestName.textContent = `${test.name} (${test.date})`;
+            DOM.deleteModal.classList.remove('hidden');
+            DOM.deleteModal.querySelector('button[aria-label="Cancel Deletion"]').focus();
+        }
+
+        function confirmDelete() {
+            if (state.currentDeleteIndex !== null) {
+                state.tests.splice(state.currentDeleteIndex, 1);
+                updateTable();
+                utils.saveToLocalStorage();
+            }
+            closeDeleteModal();
+        }
+
+        function closeDeleteModal() {
+            DOM.deleteModal.classList.add('hidden');
+            state.currentDeleteIndex = null;
+        }
+
+        function openFeedbackModal(index) {
+            state.currentFeedbackIndex = index;
+            const test = state.tests[index];
+            DOM.feedbackTestName.textContent = `${test.name} (${test.date})`;
+            DOM.feedbackInput.value = test.feedback || '';
+            DOM.feedbackModal.classList.remove('hidden');
+            DOM.feedbackInput.focus();
+        }
+
+        function saveFeedback() {
+            if (state.currentFeedbackIndex === null) return;
+            state.tests[state.currentFeedbackIndex].feedback = DOM.feedbackInput.value;
+            updateTable();
+            utils.saveToLocalStorage();
+            closeFeedbackModal();
+        }
+
+        function closeFeedbackModal() {
+            DOM.feedbackModal.classList.add('hidden');
+            state.currentFeedbackIndex = null;
+            DOM.feedbackInput.value = '';
+        }
+
+        async function showDetailedAnalysis(index) {
+            const test = state.tests[index];
+            DOM.detailedAnalysis.classList.remove('hidden');
+
+            DOM.selectedDate.textContent = test.date;
+            DOM.selectedTestName.textContent = test.name;
+            DOM.detailScore.textContent = test.total;
+            DOM.detailPercentage.textContent = test.percentage;
+
+            const totalCorrect = test.quant.correct + test.reasoning.correct + test.english.correct + test.ga.correct;
+            const totalIncorrect = test.quant.incorrect + test.reasoning.incorrect + test.english.incorrect + test.ga.incorrect;
+            const totalUnattempted = test.quant.unattempted + test.reasoning.unattempted + test.english.unattempted + test.ga.unattempted;
+            const totalAttempted = totalCorrect + totalIncorrect;
+            const accuracy = totalAttempted > 0 ? ((totalCorrect / totalAttempted) * 100).toFixed(2) : 0;
+
+            DOM.detailAttempted.textContent = totalAttempted;
+            DOM.detailAccuracy.textContent = accuracy;
+
+            utils.showSpinner(DOM.statsSpinner);
+            if (state.statsChart) state.statsChart.destroy();
+
+            await utils.delay(500);
+
+            const ctx = document.getElementById('statsChart').getContext('2d');
+            const isDarkMode = document.body.getAttribute('data-theme') === 'dark';
+            state.statsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Correct', 'Incorrect', 'Unattempted'],
+                    datasets: [{
+                        label: 'Questions',
+                        data: [totalCorrect, totalIncorrect, totalUnattempted],
+                        backgroundColor: ['#f97316', '#fdba74', '#9ca3af']
+                    }]
+                },
+                options: {
+                    indexAxis: 'x',
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { color: isDarkMode ? '#e5e7eb' : '#ffffff' },
+                            grid: { color: isDarkMode ? 'rgba(229, 231, 235, 0.05)' : 'rgba(255, 255, 255, 0.05)' }
+                        },
+                        x: {
+                            ticks: { color: isDarkMode ? '#e5e7eb' : '#ffffff' },
+                            grid: { color: isDarkMode ? 'rgba(229, 231, 235, 0.05)' : 'rgba(255, 255, 255, 0.05)' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: isDarkMode ? '#1e293b' : '#000000',
+                            titleColor: isDarkMode ? '#e5e7eb' : '#ffffff',
+                            bodyColor: isDarkMode ? '#e5e7eb' : '#ffffff',
+                            borderColor: isDarkMode ? '#334155' : '#ea580c',
+                            borderWidth: 1
+                        },
+                        datalabels: {
+                            color: isDarkMode ? '#e5e7eb' : '#ffffff',
+                            anchor: 'end',
+                            align: 'top',
+                            offset: 5,
+                            formatter: (value) => value
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+
+            utils.hideSpinner(DOM.statsSpinner);
+
+            DOM.sectionalTableBody.innerHTML = '';
+            const sections = [
+                { name: 'General Intelligence and Reasoning', data: test.reasoning },
+                { name: 'General Awareness', data: test.ga },
+                { name: 'Quantitative Aptitude', data: test.quant },
+                { name: 'English Language & Comprehension', data: test.english }
+            ];
+
+            sections.forEach(section => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="border border-white border-opacity-10 p-3">${section.name}</td>
+                    <td class="border border-white border-opacity-10 p-3">${section.data.score}</td>
+                    <td class="border border-white border-opacity-10 p-3">-</td>
+                    <td class="border border-white border-opacity-10 p-3">${section.data.attempted}</td>
+                    <td class="border border-white border-opacity-10 p-3">${section.data.correct}</td>
+                    <td class="border border-white border-opacity-10 p-3">${section.data.incorrect}</td>
+                    <td class="border border-white border-opacity-10 p-3">${section.data.unattempted}</td>
+                `;
+                DOM.sectionalTableBody.appendChild(row);
+            });
+        }
+
+        function clearForm() {
+            document.getElementById('testName').value = '';
+            document.getElementById('testDate').value = '';
+            document.getElementById('quantCorrect').value = '';
+            document.getElementById('quantIncorrect').value = '';
+            document.getElementById('reasoningCorrect').value = '';
+            document.getElementById('reasoningIncorrect').value = '';
+            document.getElementById('englishCorrect').value = '';
+            document.getElementById('englishIncorrect').value = '';
+            document.getElementById('gaCorrect').value = '';
+            document.getElementById('gaIncorrect').value = '';
+        }
+
+         function exportToCSV() {
+            if (!state.tests.length) {
+                alert('No data to export.');
+                return;
+            }
+
+            const headers = [
+                'Date', 'Test Name', 'Quantitative Score', 'Quantitative Correct', 'Quantitative Incorrect', 
+                'Quantitative Unattempted', 'Reasoning Score', 'Reasoning Correct', 'Reasoning Incorrect', 
+                'Reasoning Unattempted', 'English Score', 'English Correct', 'English Incorrect', 'English Unattempted', 
+                'General Awareness Score', 'General Awareness Correct', 'General Awareness Incorrect', 
+                'General Awareness Unattempted', 'Total Score', 'Percentage', 'Feedback'
+            ];
+
+            const rows = state.tests.map(test => [
+                test.date, test.name,
+                test.quant.score, test.quant.correct, test.quant.incorrect, test.quant.unattempted,
+                test.reasoning.score, test.reasoning.correct, test.reasoning.incorrect, test.reasoning.unattempted,
+                test.english.score, test.english.correct, test.english.incorrect, test.english.unattempted,
+                test.ga.score, test.ga.correct, test.ga.incorrect, test.ga.unattempted,
+                test.total, test.percentage, `"${test.feedback.replace(/"/g, '""')}"`
+            ]);
+
+            const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `mock_test_analysis_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function openResetModal() {
+            if (!state.tests.length) {
+                alert('No data to reset.');
+                return;
+            }
+            DOM.resetModal.classList.remove('hidden');
+            DOM.resetModal.querySelector('button[aria-label="Cancel Reset"]').focus();
+        }
+
+        function confirmReset() {
+            state.tests = [];
+            updateTable();
+            utils.saveToLocalStorage();
+            DOM.scoresGraphContainer.classList.add('hidden');
+            DOM.detailedAnalysis.classList.add('hidden');
+            closeResetModal();
+        }
+
+        function closeResetModal() {
+            DOM.resetModal.classList.add('hidden');
+        }
+    </script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        @keyframes chartFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        button:focus, input:focus, textarea:focus {
+            outline: 2px solid #ea580c;
+            outline-offset: 2px;
+        }
+        [data-theme="dark"] {
+            --text-color: #e5e7eb;
+            --bg-color: #111827;
+            --glass-bg: rgba(234, 88, 12, 0.3);
+            --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+        [data-theme="dark"] body {
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            background: linear-gradient(135deg, #9a3412, #7f1d1d);
+        }
+        [data-theme="dark"] #detailedAnalysis {
+            background: rgba(30, 30, 30, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        [data-theme="dark"] #detailedAnalysis h2,
+        [data-theme="dark"] #detailedAnalysis h3,
+        [data-theme="dark"] #detailedAnalysis .text-black,
+        [data-theme="dark"] #sectionalTableBody {
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] #detailedAnalysis .bg-white {
+            background-color: rgba(50, 50, 50, 0.8) !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+        
+        [data-theme="dark"] #statsChart {
+            background: rgba(40, 40, 40, 0.8) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+        
+        [data-theme="dark"] #sectionalTable thead tr {
+            background: rgba(255, 255, 255, 0.1) !important;
+        }
+        
+        [data-theme="dark"] #sectionalTable th,
+        [data-theme="dark"] #sectionalTable td {
+            border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+        [data-theme="dark"] .neumorphic-btn {
+            background: #1f2937;
+            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.4), -5px -5px 15px rgba(255, 255, 255, 0.05);
+        }
+        [data-theme="dark"] .chart-container canvas {
+            background: rgba(30, 41, 59, 0.15);
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                z-index: 50;
+            }
+            .content {
+                margin-left: 0 !important;
+            }
+        }
+    </style>
+</body>
+</html>
