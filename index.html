@@ -1,5 +1,7 @@
 
 
+
+
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
@@ -13,612 +15,615 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body style="background: linear-gradient(45deg, #c3dafe, #e9d5ff, #c3dafe); background-size: 200% 200%; animation: gradientAnimation 15s ease infinite; color: #1f2937; transition: background 0.5s ease, color 0.3s ease; font-family: 'Poppins', sans-serif;" class="min-h-screen flex justify-center">
-    <style>
-        @keyframes gradientAnimation {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        .glassmorphism {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            transition: background 0.3s ease, border 0.3s ease, box-shadow 0.3s ease;
-        }
-        .neumorphic {
-            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.1), -5px -5px 15px rgba(255, 255, 255, 0.5);
-            transition: all 0.3s ease;
-        }
-        .task-card {
-            position: relative;
-            border-radius: 2rem;
-            padding: 2rem;
-            margin-bottom: 1rem;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            border: none;
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            cursor: pointer;
-        }
-        .task-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
-            filter: brightness(1.03);
-        }
-        .task-card:hover::after {
-            content: 'Double-tap to edit';
-            visibility: visible;
-            background-color: #1f2937;
-            color: #ffffff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 5px 10px;
-            position: absolute;
-            z-index: 1;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            opacity: 1;
-            transition: opacity 0.3s;
-        }
-        .task-card.completed {
-            background: linear-gradient(to right, #d1fae5, #a7f3d0) !important;
-        }
-        .task-card.pending {
-            background: linear-gradient(to right, #fee2e2, #fecaca) !important;
-        }
-        .task-card.not-started {
-            background: linear-gradient(to right, #f3f4f6, #e5e7eb) !important;
-        }
-        .task-card.running {
-            border: 3px solid #4f46e5;
-            box-shadow: 0 6px 18px rgba(79, 70, 229, 0.3);
-            background: rgba(255, 255, 255, 0.9);
-        }
-        .task-content {
-            display: grid;
-            grid-template-columns: auto 1fr auto;
-            align-items: start;
-            gap: 1rem;
-        }
-        .status-circles {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            padding-top: 0.5rem;
-        }
-        .status-circle {
-            width: 1rem;
-            height: 1rem;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        .status-circle.disabled {
-            pointer-events: none;
-            opacity: 0.5;
-        }
-        .status-circle.green {
-            background-color: #34D399;
-        }
-        .status-circle.red {
-            background-color: #F87171;
-        }
-        .status-circle.white {
-            background-color: #FFFFFF;
-            border: 2px solid #D1D5DB;
-        }
-        .status-circle:hover:not(.disabled) {
-            transform: scale(1.15);
-        }
-        .task-details {
-            flex: 1;
-        }
-        .task-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            align-items: center;
-        }
-        .time-spent {
-            position: absolute;
-            top: -0.75rem;
-            right: 1rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #4B5563;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 0.25rem 0.75rem;
-            border-radius: 1rem;
-            border: 1px solid #E5E7EB;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-        .modal-backdrop {
-            backdrop-filter: blur(5px);
-            animation: fadeIn 0.3s ease;
-            overflow-y: auto;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        .modal-content {
-            animation: slideUp 0.5s ease forwards;
-        }
-        @keyframes slideUp {
-            from { transform: translateY(50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        .floating-label-group {
-            position: relative;
-            margin-bottom: 1.5rem;
-        }
-        .floating-label {
-            position: absolute;
-            top: 0;
-            left: 0.75rem;
-            transform: translateY(0.75rem);
-            transition: all 0.2s ease-out;
-            color: #6B7280;
-            pointer-events: none;
-        }
-        .floating-select:focus + .floating-label,
-        .floating-select:not([value=""]) + .floating-label,
-        .floating-input:focus + .floating-label,
-        .floating-input:not(:placeholder-shown) + .floating-label {
-            transform: translateY(-0.5rem) scale(0.85);
-            color: #4F46E5;
-            background: white;
-            padding: 0 0.25rem;
-        }
-        .progress-bar {
-            width: 100%;
-            background-color: #e0e0e0;
-            border-radius: 9999px;
-            overflow: hidden;
-            height: 1rem;
-            margin-top: 0.5rem;
-        }
-        .progress-bar-fill {
-            height: 100%;
-            background: linear-gradient(to right, #4f46e5, #a855f7);
-            transition: width 0.5s ease-in-out;
-        }
-        .header-photo {
-            object-fit: cover;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            transition: border 0.3s ease;
-        }
-        .tooltip {
-            visibility: hidden;
-            background-color: #1f2937;
-            color: #ffffff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 5px 10px;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            transform: translateX(-50%);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        button:hover .tooltip {
-            visibility: visible;
-            opacity: 1;
-        }
-        .custom-checkbox {
-            appearance: none;
-            width: 1.25rem;
-            height: 1.25rem;
-            border: 2px solid #4f46e5;
-            border-radius: 0.25rem;
-            background-color: white;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        .custom-checkbox:checked {
-            background-color: #4f46e5;
-            border-color: #4f46e5;
-        }
-        .custom-checkbox:checked::after {
-            content: '\2713';
-            color: white;
-            font-size: 0.875rem;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100%;
-        }
-        .search-container {
-            position: relative;
-            display: flex;
-            align-items: center;
-            width: 100%;
-        }
-        .search-clear {
-            position: absolute;
-            right: 0.75rem;
-            top: 50%;
-            transform: translateY(-50%);
-            background: transparent;
-            border: none;
-            color: #6B7280;
-            cursor: pointer;
-            font-size: 1.25rem;
-            display: none;
-            padding: 0;
-            line-height: 1;
-        }
-        .search-clear.visible {
-            display: block;
-        }
-        .search-clear:hover {
-            color: #4F46E5;
-        }
-        .floating-button {
-            position: fixed !important;
-            bottom: 20px !important;
-            z-index: 1000 !important;
-            background: linear-gradient(to right, #4f46e5, #a855f7);
-            border-radius: 50% !important;
-            width: 50px !important;
-            height: 50px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
-        }
-        .floating-add-task-btn {
-            right: 20px !important;
-        }
-        .task-content {
-            display: grid;
-            grid-template-columns: auto 1fr auto;
-            align-items: start;
-            gap: 1.5rem;
-        }
-        .task-details {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 0rem;
-        }
-        .task-details .subject {
-            font-size: 1.25rem;
-            font-weight: bold;
-            color: #fa023c;
-        }
-        .task-details .sub-topic {
-            font-size: 1rem;
-            color: #2c5282;
-        }
-        .task-details .topic {
-            font-size: 1.10rem;
-            color: #0a05a3;
-        }
-        .task-details .details {
-            font-size: 1rem;
-            color: #4d4804;
-        }
-        [data-theme="dark"] .task-details .subject {
-            color: #E5E7EB;
-        }
-        [data-theme="dark"] .task-details .sub-topic {
-            color: #BEE3F8;
-        }
-        [data-theme="dark"] .task-details .topic {
-            color: #D1D5DB;
-        }
-        [data-theme="dark"] .task-details .details {
-            color: #9CA3AF;
-        }
-        [data-theme="dark"] .task-details .time-spent-text {
-            color: #9CA3AF;
-        }
-        [data-theme="dark"] {
-            background: linear-gradient(to right, #1e3a8a, #5b21b6, #1e3a8a);
-            color: #e5e7eb;
-        }
-        [data-theme="dark"] .glassmorphism {
-            background: rgba(31, 41, 55, 0.5);
-            border-color: rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        }
-        [data-theme="dark"] .neumorphic {
-            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3), -5px -5px 15px rgba(255, 255, 255, 0.05);
-        }
-        [data-theme="dark"] .floating-input:focus + .floating-label,
-        [data-theme="dark"] .floating-input:not(:placeholder-shown) + .floating-label,
-        [data-theme="dark"] .floating-select:focus + .floating-label,
-        [data-theme="dark"] .floating-select:not([value=""]) + .floating-label {
-            background: #1f2937;
-            color: #a855f7;
-        }
-        .progress-bar {
-            background-color: #374151;
-        }
-        [data-theme="dark"] .tooltip {
-            background-color: #374151;
-        }
-        [data-theme="dark"] .custom-checkbox {
-            border-color: #a855f7;
-            background-color: #1f2937;
-        }
-        [data-theme="dark"] .custom-checkbox:checked {
-            background-color: #a855f7;
-            border-color: #a855f7;
-        }
-        [data-theme="dark"] .search-clear:hover {
-            color: #a855f7;
-        }
-        [data-theme="dark"] .floating-button {
-            background: linear-gradient(to right, #3b82f6, #d946ef);
-        }
-        [data-theme="dark"] .task-card {
-            background: rgba(31, 41, 55, 0.7);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-        [data-theme="dark"] .task-card.running {
-            border: 3px solid #a855f7;
-            box-shadow: 0 6px 18px rgba(168, 85, 247, 0.3);
-            background: rgba(31, 41, 55, 0.8);
-        }
-        [data-theme="dark"] .task-card:hover {
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
-        }
-        [data-theme="dark"] .task-card:hover::after {
-            background-color: #374151;
-        }
-        [data-theme="dark"] .time-spent {
-            background: rgba(31, 41, 55, 0.9);
-            border-color: #4B5563;
-            color: #D1D5DB;
-        }
-        .chart-container {
-            position: relative;
-            width: 100%;
-            height: 300px;
-            overflow: hidden;
-        }
-        .modal-content {
-            max-height: 90vh;
-            overflow-y: auto;
-            scrollbar-width: thin;
-            scrollbar-color: #4f46e5 #e5e7eb;
-        }
-        .modal-content::-webkit-scrollbar {
-            width: 8px;
-        }
-        .modal-content::-webkit-scrollbar-track {
-            background: #e5e7eb;
-        }
-        .modal-content::-webkit-scrollbar-thumb {
-            background-color: #4f46e5;
-            border-radius: 4px;
-        }
-        [data-theme="dark"] .modal-content::-webkit-scrollbar-track {
-            background: #374151;
-        }
-        [data-theme="dark"] .modal-content::-webkit-scrollbar-thumb {
-            background-color: #a855f7;
-        }
-        .ai-assistant-message {
-            max-width: 80%;
-            padding: 12px 16px;
-            border-radius: 18px;
-            margin-bottom: 8px;
-            word-wrap: break-word;
-        }
-        .ai-assistant-user {
-            align-self: flex-end;
-            background-color: #4f46e5;
-            color: white;
-            border-bottom-right-radius: 4px;
-        }
-        .ai-assistant-bot {
-            align-self: flex-start;
-            background-color: #f3f4f6;
-            color: #1f2937;
-            border-bottom-left-radius: 4px;
-        }
-        [data-theme="dark"] .ai-assistant-bot {
-            background-color: #374151;
-            color: #e5e7eb;
-        }
-        .typing-indicator {
-            display: flex;
-            padding: 8px;
-        }
-        .typing-indicator span {
-            height: 8px;
-            width: 8px;
-            margin: 0 2px;
-            background-color: #9ca3af;
-            border-radius: 50%;
-            display: inline-block;
-            animation: typing 1s infinite ease-in-out;
-        }
-        .typing-indicator span:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-        .typing-indicator span:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-        @keyframes typing {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
-        }
-        /* Sidebar Styles */
-.sidebar {
-    position: fixed;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 250px;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(10px);
-    border-right: 1px solid rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    overflow-y: auto;
-    z-index: 100;
-    transition: transform 0.3s ease;
-}
 
-[data-theme="dark"] .sidebar {
-    background: rgba(31, 41, 55, 0.9);
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.sidebar-header {
-    font-size: 1.5rem;
-    font-weight: bold;
-    margin-bottom: 20px;
-    color: #4f46e5;
-    text-align: center;
-    font-family: 'Playfair Display', serif;
-}
-
-.sidebar-section {
-    margin-bottom: 20px;
-}
-
-.sidebar-section-title {
-    font-weight: bold;
-    margin-bottom: 10px;
-    color: #4f46e5;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.sidebar-item {
-    display: flex;
-    align-items: center;
-    padding: 8px 12px;
-    border-radius: 8px;
-    margin-bottom: 5px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    gap: 10px;
-}
-
-.sidebar-item:hover {
-    background-color: rgba(79, 70, 229, 0.1);
-}
-
-.sidebar-item.active {
-    background-color: rgba(79, 70, 229, 0.2);
-    font-weight: bold;
-}
-
-.sidebar-item i {
-    width: 20px;
-    text-align: center;
-}
-
-.sidebar-divider {
-    height: 1px;
-    background-color: rgba(0, 0, 0, 0.1);
-    margin: 15px 0;
-}
-
-[data-theme="dark"] .sidebar-divider {
-    background-color: rgba(255, 255, 255, 0.1);
-}
-
-/* Main content adjustment */
-.main-content {
-    margin-left: 250px;
-    transition: margin-left 0.3s ease;
-}
-
-@media (max-width: 1024px) {
-    .sidebar {
-        transform: translateX(-100%);
+<style>
+    @keyframes gradientAnimation {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
     }
-    .sidebar.open {
-        transform: translateX(0);
+    .glassmorphism {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        transition: background 0.3s ease, border 0.3s ease, box-shadow 0.3s ease;
     }
-    .main-content {
-        margin-left: 0;
+    .neumorphic {
+        box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.1), -5px -5px 15px rgba(255, 255, 255, 0.5);
+        transition: all 0.3s ease;
     }
-}
-
-/* Mobile menu button */
-.mobile-menu-button {
-    position: fixed;
-    left: 10px;
-    top: 10px;
-    z-index: 101;
-    display: none;
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-[data-theme="dark"] .mobile-menu-button {
-    background: rgba(31, 41, 55, 0.9);
-}
-
-@media (max-width: 1024px) {
-    .mobile-menu-button {
+    .task-card {
+        position: relative;
+        border-radius: 1.5rem;
+        padding: 1.5rem;
+        margin-bottom: 0.8rem;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: none;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        cursor: pointer;
+    }
+    .task-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+        filter: brightness(1.03);
+    }
+    .task-card:hover::after {
+        content: 'Double-tap to edit';
+        visibility: visible;
+        background-color: #1f2937;
+        color: #ffffff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px 10px;
+        position: absolute;
+        z-index: 1;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 1;
+        transition: opacity 0.3s;
+    }
+    .task-card.completed {
+        background: linear-gradient(to right, #d1fae5, #a7f3d0) !important;
+    }
+    .task-card.pending {
+        background: linear-gradient(to right, #fee2e2, #fecaca) !important;
+    }
+    .task-card.not-started {
+        background: linear-gradient(to right, #f3f4f6, #e5e7eb) !important;
+    }
+    .task-card.running {
+        border: 3px solid #4f46e5;
+        box-shadow: 0 6px 18px rgba(79, 70, 229, 0.3);
+        background: rgba(255, 255, 255, 0.9);
+    }
+    .task-content {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: start;
+        gap: 0.8rem;
+    }
+    .status-circles {
         display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        padding-top: 0.4rem;
     }
-.sidebar-item.active {
-    background-color: rgba(79, 70, 229, 0.2);
-    font-weight: bold;
-    color: #4f46e5;
-}
+    .status-circle {
+        width: 0.9rem;
+        height: 0.9rem;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .status-circle.disabled {
+        pointer-events: none;
+        opacity: 0.5;
+    }
+    .status-circle.green {
+        background-color: #34D399;
+    }
+    .status-circle.red {
+        background-color: #F87171;
+    }
+    .status-circle.white {
+        background-color: #FFFFFF;
+        border: 2px solid #D1D5DB;
+    }
+    .status-circle:hover:not(.disabled) {
+        transform: scale(1.15);
+    }
+    .task-details {
+        flex: 1;
+    }
+    .task-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        align-items: center;
+    }
+    .time-spent {
+        position: absolute;
+        top: -0.6rem;
+        right: 1rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #4B5563;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 0.2rem 0.6rem;
+        border-radius: 1rem;
+        border: 1px solid #E5E7EB;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    .modal-backdrop {
+        backdrop-filter: blur(5px);
+        animation: fadeIn 0.3s ease;
+        overflow-y: auto;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    .modal-content {
+        animation: slideUp 0.5s ease forwards;
+    }
+    @keyframes slideUp {
+        from { transform: translateY(50px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    .floating-label-group {
+        position: relative;
+        margin-bottom: 1.2rem;
+    }
+    .floating-label {
+        position: absolute;
+        top: 0;
+        left: 0.6rem;
+        transform: translateY(0.6rem);
+        transition: all 0.2s ease-out;
+        color: #6B7280;
+        pointer-events: none;
+    }
+    .floating-select:focus + .floating-label,
+    .floating-select:not([value=""]) + .floating-label,
+    .floating-input:focus + .floating-label,
+    .floating-input:not(:placeholder-shown) + .floating-label {
+        transform: translateY(-0.4rem) scale(0.85);
+        color: #4F46E5;
+        background: white;
+        padding: 0 0.2rem;
+    }
+    .progress-bar {
+        width: 100%;
+        background-color: #e0e0e0;
+        border-radius: 9999px;
+        overflow: hidden;
+        height: 0.8rem;
+        margin-top: 0.4rem;
+    }
+    .progress-bar-fill {
+        height: 100%;
+        background: linear-gradient(to right, #4f46e5, #a855f7);
+        transition: width 0.5s ease-in-out;
+    }
+    .header-photo {
+        object-fit: cover;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        transition: border 0.3s ease;
+    }
+    .tooltip {
+        visibility: hidden;
+        background-color: #1f2937;
+        color: #ffffff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 4px 8px;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 0.8rem;
+    }
+    button:hover .tooltip {
+        visibility: visible;
+        opacity: 1;
+    }
+    .custom-checkbox {
+        appearance: none;
+        width: 1.1rem;
+        height: 1.1rem;
+        border: 2px solid #4f46e5;
+        border-radius: 0.2rem;
+        background-color: white;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .custom-checkbox:checked {
+        background-color: #4f46e5;
+        border-color: #4f46e5;
+    }
+    .custom-checkbox:checked::after {
+        content: '\2713';
+        color: white;
+        font-size: 0.8rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+    }
+    .search-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+    .search-clear {
+        position: absolute;
+        right: 0.6rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: transparent;
+        border: none;
+        color: #6B7280;
+        cursor: pointer;
+        font-size: 1.1rem;
+        display: none;
+        padding: 0;
+        line-height: 1;
+    }
+    .search-clear.visible {
+        display: block;
+    }
+    .search-clear:hover {
+        color: #4F46E5;
+    }
+    .floating-button {
+        position: fixed !important;
+        bottom: 16px !important;
+        z-index: 1000 !important;
+        background: linear-gradient(to right, #4f46e5, #a855f7);
+        border-radius: 50% !important;
+        width: 46px !important;
+        height: 46px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+    }
+    .floating-add-task-btn {
+        right: 16px !important;
+    }
+    .task-details .subject {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #fa023c;
+    }
+    .task-details .sub-topic {
+        font-size: 0.9rem;
+        color: #2c5282;
+    }
+    .task-details .topic {
+        font-size: 1rem;
+        color: #0a05a3;
+    }
+    .task-details .details {
+        font-size: 0.9rem;
+        color: #4d4804;
+    }
+    [data-theme="dark"] .task-details .subject {
+        color: #E5E7EB;
+    }
+    [data-theme="dark"] .task-details .sub-topic {
+        color: #BEE3F8;
+    }
+    [data-theme="dark"] .task-details .topic {
+        color: #D1D5DB;
+    }
+    [data-theme="dark"] .task-details .details {
+        color: #9CA3AF;
+    }
+    [data-theme="dark"] .task-details .time-spent-text {
+        color: #9CA3AF;
+    }
+    [data-theme="dark"] {
+        background: linear-gradient(to right, #1e3a8a, #5b21b6, #1e3a8a);
+        color: #e5e7eb;
+    }
+    [data-theme="dark"] .glassmorphism {
+        background: rgba(31, 41, 55, 0.5);
+        border-color: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    [data-theme="dark"] .neumorphic {
+        box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3), -5px -5px 15px rgba(255, 255, 255, 0.05);
+    }
+    [data-theme="dark"] .floating-input:focus + .floating-label,
+    [data-theme="dark"] .floating-input:not(:placeholder-shown) + .floating-label,
+    [data-theme="dark"] .floating-select:focus + .floating-label,
+    [data-theme="dark"] .floating-select:not([value=""]) + .floating-label {
+        background: #1f2937;
+        color: #a855f7;
+    }
+    .progress-bar {
+        background-color: #374151;
+    }
+    [data-theme="dark"] .tooltip {
+        background-color: #374151;
+    }
+    [data-theme="dark"] .custom-checkbox {
+        border-color: #a855f7;
+        background-color: #1f2937;
+    }
+    [data-theme="dark"] .custom-checkbox:checked {
+        background-color: #a855f7;
+        border-color: #a855f7;
+    }
+    [data-theme="dark"] .search-clear:hover {
+        color: #a855f7;
+    }
+    [data-theme="dark"] .floating-button {
+        background: linear-gradient(to right, #3b82f6, #d946ef);
+    }
+    [data-theme="dark"] .task-card {
+        background: rgba(31, 41, 55, 0.7);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    [data-theme="dark"] .task-card.running {
+        border: 3px solid #a855f7;
+        box-shadow: 0 6px 18px rgba(168, 85, 247, 0.3);
+        background: rgba(31, 41, 55, 0.8);
+    }
+    [data-theme="dark"] .task-card:hover {
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+    }
+    [data-theme="dark"] .task-card:hover::after {
+        background-color: #374151;
+    }
+    [data-theme="dark"] .time-spent {
+        background: rgba(31, 41, 55, 0.9);
+        border-color: #4B5563;
+        color: #D1D5DB;
+    }
+    .chart-container {
+        position: relative;
+        width: 100%;
+        height: 280px;
+        overflow: hidden;
+    }
+    .modal-content {
+        max-height: 85vh;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: #4f46e5 #e5e7eb;
+    }
+    .modal-content::-webkit-scrollbar {
+        width: 6px;
+    }
+    .modal-content::-webkit-scrollbar-track {
+        background: #e5e7eb;
+    }
+    .modal-content::-webkit-scrollbar-thumb {
+        background-color: #4f46e5;
+        border-radius: 3px;
+    }
+    [data-theme="dark"] .modal-content::-webkit-scrollbar-track {
+        background: #374151;
+    }
+    [data-theme="dark"] .modal-content::-webkit-scrollbar-thumb {
+        background-color: #a855f7;
+    }
+    .ai-assistant-message {
+        max-width: 80%;
+        padding: 10px 14px;
+        border-radius: 16px;
+        margin-bottom: 6px;
+        word-wrap: break-word;
+        font-size: 0.9rem;
+    }
+    .ai-assistant-user {
+        align-self: flex-end;
+        background-color: #4f46e5;
+        color: white;
+        border-bottom-right-radius: 4px;
+    }
+    .ai-assistant-bot {
+        align-self: flex-start;
+        background-color: #f3f4f6;
+        color: #1f2937;
+        border-bottom-left-radius: 4px;
+    }
+    [data-theme="dark"] .ai-assistant-bot {
+        background-color: #374151;
+        color: #e5e7eb;
+    }
+    .typing-indicator {
+        display: flex;
+        padding: 6px;
+    }
+    .typing-indicator span {
+        height: 6px;
+        width: 6px;
+        margin: 0 2px;
+        background-color: #9ca3af;
+        border-radius: 50%;
+        display: inline-block;
+        animation: typing 1s infinite ease-in-out;
+    }
+    .typing-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+    .typing-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+    @keyframes typing {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-4px); }
+    }
 
-[data-theme="dark"] .sidebar-item.active {
-    background-color: rgba(165, 180, 252, 0.2);
-    color: #a5b4fc;
-}
-/* Add to your existing CSS */
+    /* Sidebar Styles */
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 200px;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        border-right: 1px solid rgba(0, 0, 0, 0.1);
+        padding: 12px;
+        overflow-y: auto;
+        z-index: 100;
+        transition: transform 0.3s ease;
+    }
+
+    [data-theme="dark"] .sidebar {
+        background: rgba(31, 41, 55, 0.9);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar-header {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 16px;
+        color: #4f46e5;
+        text-align: center;
+        font-family: 'Playfair Display', serif;
+    }
+
+    .sidebar-section {
+        margin-bottom: 16px;
+    }
+
+    .sidebar-section-title {
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: #4f46e5;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.9rem;
+    }
+
+    .sidebar-item {
+        display: flex;
+        align-items: center;
+        padding: 6px 8px;
+        border-radius: 6px;
+        margin-bottom: 4px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        gap: 8px;
+        font-size: 0.85rem;
+    }
+
+    .sidebar-item:hover {
+        background-color: rgba(79, 70, 229, 0.1);
+    }
+
+    .sidebar-item.active {
+        background-color: rgba(79, 70, 229, 0.2);
+        font-weight: bold;
+    }
+
+    .sidebar-item i {
+        width: 16px;
+        text-align: center;
+        font-size: 0.85rem;
+    }
+
+    .sidebar-divider {
+        height: 1px;
+        background-color: rgba(0, 0, 0, 0.1);
+        margin: 12px 0;
+    }
+
+    [data-theme="dark"] .sidebar-divider {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Main content adjustment */
+    .main-content {
+        margin-left: -100px;
+        transition: margin-left 0.3s ease;
+    }
+
+    /* Mobile menu button */
+    .mobile-menu-button {
+        position: fixed;
+        left: 8px;
+        top: 8px;
+        z-index: 101;
+        display: none;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    [data-theme="dark"] .mobile-menu-button {
+        background: rgba(31, 41, 55, 0.9);
+    }
+
+    /* Day Complete Notification */
+    .day-complete-notification {
+        position: fixed;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: white;
+        padding: 16px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-width: 380px;
+        width: 90%;
+        animation: slideUp 0.3s ease-out;
+    }
+
+    [data-theme="dark"] .day-complete-notification {
+        background: #1f2937;
+        color: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
 .day-complete-notification {
     position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 1000;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    max-width: 400px;
-    width: 90%;
-    animation: slideUp 0.3s ease-out;
+    top: 4px;
+    right: 4px;
+    left: auto;
+    transform: none;
+    /* other styles remain unchanged */
 }
 
-[data-theme="dark"] .day-complete-notification {
-    background: #1f2937;
-    color: white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
+    @media (max-width: 1024px) {
+        .sidebar {
+            transform: translateX(-100%);
+            width: 180px;
+        }
+        .sidebar.open {
+            transform: translateX(0);
+        }
+        .main-content {
+            margin-left: 0;
+        }
+        .mobile-menu-button {
+            display: flex;
+        }
+        #toast {
+            top: 10px;
+            right: 10px;
+            max-width: calc(100% - 20px);
+        }
+    }
 
-.day-complete-notification-buttons {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-}
+    @media (max-width: 768px) {
+        .sidebar {
+            width: 160px;
+            padding: 10px;
+        }
+        .task-card {
+            padding: 1.2rem;
+        }
+        .ai-assistant-message {
+            max-width: 90%;
+            padding: 8px 12px;
+        }
+    }
 
-@keyframes slideUp {
-    from { transform: translateX(-50%) translateY(100px); opacity: 0; }
-    to { transform: translateX(-50%) translateY(0); opacity: 1; }
-}
-}
-    </style>
+</style>
+
 <div class="mobile-menu-button" onclick="toggleSidebar()">
     <i class="fas fa-bars"></i>
 </div>
@@ -1071,7 +1076,7 @@
             </div>
         </div>
 
-        <!-- Delete Confirm Modal -->
+
 <!-- Delete Confirm Modal -->
 <div id="deleteConfirmModal" class="fixed inset-0 bg-black/50 modal-backdrop hidden" role="dialog" aria-labelledby="deleteConfirmModalTitle">
     <div class="absolute top-4 right-4 bg-white/90 rounded-2xl p-6 w-full max-w-sm shadow-lg border border-gray-200 modal-content">
@@ -1083,11 +1088,12 @@
         </div>
     </div>
 </div>
-
+</div>
     <!-- Toast Notification -->
-    <div id="toast" class="fixed top-4 right-4 hidden bg-gray-600 text-white p-4 rounded-lg shadow-lg">
+   <div id="toast" class="fixed top-4 right-4 hidden bg-gray-600 text-white p-4 rounded-lg shadow-lg">
         <span id="toastMessage"></span><button onclick="hideToast()" class="ml-2 text-white">×</button>
     </div>
+
 
 
     <script>
@@ -1329,6 +1335,7 @@ const utils = {
         const secs = Math.floor(seconds % 60);
         return `${hours}h ${minutes}m ${secs}s`;
     },
+
     getDateKey: date => date.toISOString().split('T')[0],
     validateUrl: url => {
         try {
@@ -2372,7 +2379,8 @@ function handleDrop(event, week, day, targetIndex) {
     }
 }
 
-// Update Tasks
+
+// Modify the updateTasks function to respect current filter
 function updateTasks() {
     try {
         const week = `Week${state.currentWeek}`;
@@ -2382,52 +2390,47 @@ function updateTasks() {
         }
         const allTasks = state.tasks[week][state.currentDay] || [];
         const searchQuery = DOM.taskSearch.value.trim().toLowerCase();
-        const subjectFilter = DOM.subjectFilter.value;
-        const taskTypeFilter = DOM.taskTypeFilter.value;
-        const sortBy = DOM.taskSort.value;
         
-        let filteredTasks = allTasks.filter(task => {
-            if (searchQuery && 
-                !task.subject.toLowerCase().includes(searchQuery) && 
-                !task.subTopic.toLowerCase().includes(searchQuery) && 
-                !task.topic.toLowerCase().includes(searchQuery) &&
-                !task.details.toLowerCase().includes(searchQuery)) {
-                return false;
-            }
-            
-            if (subjectFilter !== 'all' && task.subject !== subjectFilter) {
-                return false;
-            }
-            
-            if (taskTypeFilter !== 'all' && task.taskType !== taskTypeFilter) {
-                return false;
-            }
-            
-            return true;
-        });
-
-        // Apply default sorting (completed at bottom) unless another sort is active
-        if (sortBy === 'status' || currentFilter === null) {
-            filteredTasks = sortTasksDefault(filteredTasks);
-        } else {
-            filteredTasks = filteredTasks.sort((a, b) => {
-                if (a.timerStatus === 'running' && b.timerStatus !== 'running') return -1;
-                if (b.timerStatus === 'running' && a.timerStatus !== 'running') return 1;
-                
-                switch (sortBy) {
-                    case 'subject':
-                        return a.subject.localeCompare(b.subject);
-                    case 'type':
-                        return (a.taskType || '').localeCompare(b.taskType || '');
-                    case 'time':
-                        return getTaskTimeSpent(b) - getTaskTimeSpent(a);
-                    default:
-                        return 0;
-                }
-            });
+        // First apply status filter if active
+   let filteredTasks = allTasks;
+    if (currentFilter) {
+        switch(currentFilter) {
+            case 'completed':
+                filteredTasks = filteredTasks.filter(task => task.completed === true);
+                break;
+            case 'pending':
+                filteredTasks = filteredTasks.filter(task => task.completed === false);
+                break;
+            case 'notStarted':
+                // Check for both null and undefined
+                filteredTasks = filteredTasks.filter(task => task.completed === null || task.completed === undefined);
+                break;
+        }
+    }
+        
+        // Then apply search filter
+        if (searchQuery) {
+            filteredTasks = filteredTasks.filter(task => 
+                task.subject.toLowerCase().includes(searchQuery) || 
+                task.subTopic.toLowerCase().includes(searchQuery) || 
+                task.topic.toLowerCase().includes(searchQuery) ||
+                task.details.toLowerCase().includes(searchQuery)
+            );
         }
         
-        renderFilteredTasks(filteredTasks);
+        // Sort tasks (running first, then pending, then completed last)
+        filteredTasks = filteredTasks.sort((a, b) => {
+            if (a.timerStatus === 'running' && b.timerStatus !== 'running') return -1;
+            if (b.timerStatus === 'running' && a.timerStatus !== 'running') return 1;
+            if (a.completed === true && b.completed !== true) return 1;
+            if (b.completed === true && a.completed !== true) return -1;
+            return 0;
+        });
+        
+        // Render the filtered tasks
+        renderTasks(filteredTasks, week);
+        
+        // Update statistics
         updateTaskStats();
         updateDailySummary();
     } catch (error) {
@@ -2965,6 +2968,7 @@ function updateTaskTimeSpentChart() {
                 data = subTopicMap[subject].map(subTopic => {
                     return labels.map((_, i) => {
                         const weekKey = `Week${i + 1}`;
+
                         return state.countedDays.reduce((sum, day) => {
                             const tasks = state.tasks[weekKey]?.[day] || [];
                             return sum + tasks.reduce((sumTask, task) => {
@@ -3186,6 +3190,7 @@ function sortTasksDefault(tasks) {
 
 let currentFilter = null; // Track the current active filter
 
+// Update the filterTasksByStatus function
 function filterTasksByStatus(status) {
     const week = `Week${state.currentWeek}`;
     const day = state.currentDay;
@@ -3197,12 +3202,10 @@ function filterTasksByStatus(status) {
 
     let tasks = state.tasks[week][day];
     
-    // If clicking the same filter again, reset to show all with default sorting
+    // Reset filter if clicking the same status again
     if (currentFilter === status) {
         currentFilter = null;
-        // Apply default sorting (completed tasks at bottom)
-        tasks = sortTasksDefault(tasks);
-        renderFilteredTasks(tasks);
+        updateTasks(); // Show all tasks
         updateActiveFilterUI();
         toggleSidebar();
         return;
@@ -3219,11 +3222,12 @@ function filterTasksByStatus(status) {
             filteredTasks = tasks.filter(task => task.completed === false);
             break;
         case 'notStarted':
-            filteredTasks = tasks.filter(task => task.completed === null);
+            // Explicitly check for null or undefined
+            filteredTasks = tasks.filter(task => task.completed === null || task.completed === undefined);
             break;
     }
 
-    renderFilteredTasks(filteredTasks);
+    renderTasks(filteredTasks, week);
     updateActiveFilterUI();
     toggleSidebar();
 }
@@ -3243,71 +3247,138 @@ function updateActiveFilterUI() {
     }
 }
 
-function renderFilteredTasks(filteredTasks) {
-    const isPast = utils.isPastDate(`Week${state.currentWeek}`, state.currentDay);
+
+
+// Render Tasks - Handles the actual DOM rendering
+function renderTasks(tasks, week) {
+    const isPast = utils.isPastDate(week, state.currentDay);
     
-    if (filteredTasks.length === 0) {
-        DOM.taskList.innerHTML = '<p class="text-gray-600 text-center">No tasks match your filters</p>';
+    if (tasks.length === 0) {
+        DOM.taskList.innerHTML = '<p class="text-gray-600 text-center">No tasks for this day</p>';
         return;
     }
+    
+    DOM.taskList.innerHTML = tasks.map((task, index) => renderTask(task, index, week, isPast)).join('');
+}
 
-    // Render the tasks in the order they're provided
-    DOM.taskList.innerHTML = filteredTasks.map((task, index) => {
-        const statusClass = task.completed === true ? 'green' : task.completed === false ? 'red' : 'white';
-        const statusCircleDisabled = isPast && !state.allowPastActions ? 'disabled' : '';
-        const taskClass = task.completed === true ? 'completed' : task.completed === false ? 'pending' : task.timerStatus === 'running' ? 'running' : 'not-started';
-        
-        return `
-            <div class="task-card ${taskClass}" data-task-id="Week${state.currentWeek}-${state.currentDay}-${index}" 
-                 draggable="true" 
-                 ondragstart="handleDragStart(event, 'Week${state.currentWeek}', '${state.currentDay}', ${index})" 
-                 ondragover="handleDragOver(event)" 
-                 ondragleave="handleDragLeave(event)" 
-                 ondragend="handleDragEnd(event)" 
-                 ondrop="handleDrop(event, 'Week${state.currentWeek}', '${state.currentDay}', ${index})"
-                 onclick="handleTaskCardDoubleTap('Week${state.currentWeek}', '${state.currentDay}', ${index})">
-                <div class="task-content">
-                    <div class="status-circles">
-                        <div class="status-circle ${statusCircleDisabled} ${statusClass === 'green' ? 'green' : 'white'}" 
-                             title="${statusCircleDisabled ? 'Status disabled for past dates' : 'Mark as Completed'}" 
-                             ${!statusCircleDisabled ? `onclick="markTaskCompleted('Week${state.currentWeek}', '${state.currentDay}', ${index}, true)"` : ''}></div>
-                        <div class="status-circle ${statusCircleDisabled} ${statusClass === 'red' ? 'red' : 'white'}" 
-                             title="${statusCircleDisabled ? 'Status disabled for past dates' : 'Mark as Pending'}" 
-                             ${!statusCircleDisabled ? `onclick="markTaskCompleted('Week${state.currentWeek}', '${state.currentDay}', ${index}, false)"` : ''}></div>
-                        <div class="status-circle ${statusCircleDisabled} ${statusClass === 'white' ? 'white' : 'white'}" 
-                             title="${statusCircleDisabled ? 'Status disabled for past dates' : 'Mark as Not Started'}" 
-                             ${!statusCircleDisabled ? `onclick="markTaskCompleted('Week${state.currentWeek}', '${state.currentDay}', ${index}, null)"` : ''}></div>
-                    </div>
-                    <div class="task-details">
-                        <p class="subject ${task.subjectColor}">${task.subject}</p>
-                        <p class="sub-topic">${task.subTopic || 'None'}</p>
-                        <p class="topic">${task.topic}</p>
-                        <p class="details">${task.details}</p>
-                        ${task.taskType ? `<span class="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">${task.taskType}</span>` : ''}
-                    </div>
-                    <div class="task-actions">
-                        ${isPast && !state.allowPastActions ? `
-                            <button onclick="duplicateTaskToNextDay('Week${state.currentWeek}', '${state.currentDay}', ${index})" class="relative px-3 py-1 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition duration-300" aria-label="Duplicate Task to Next Day"><i class="fas fa-copy"></i><span class="tooltip">Duplicate to Next Day</span></button>
-                        ` : `
-                            ${task.timerStatus === 'running' ? `
-                                <button onclick="event.stopPropagation(); pauseTaskTimer('Week${state.currentWeek}', '${state.currentDay}', ${index})" class="relative px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition duration-300" aria-label="Pause Timer"><i class="fas fa-pause"></i><span class="tooltip">Pause Timer</span></button>
-                                <button onclick="event.stopPropagation(); stopTaskTimer('Week${state.currentWeek}', '${state.currentDay}', ${index})" class="relative px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-300" aria-label="Stop Timer"><i class="fas fa-stop"></i><span class="tooltip">Stop Timer</span></button>
-                            ` : task.timerStatus === 'paused' ? `
-                                <button onclick="event.stopPropagation(); startTaskTimer('Week${state.currentWeek}', '${state.currentDay}', ${index})" class="relative px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-300" aria-label="Resume Timer"><i class="fas fa-play"></i><span class="tooltip">Resume Timer</span></button>
-                                <button onclick="event.stopPropagation(); stopTaskTimer('Week${state.currentWeek}', '${state.currentDay}', ${index})" class="relative px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-300" aria-label="Stop Timer"><i class="fas fa-stop"></i><span class="tooltip">Stop Timer</span></button>
-                            ` : `
-                                <button onclick="event.stopPropagation(); startTaskTimer('Week${state.currentWeek}', '${state.currentDay}', ${index})" class="relative px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-300" aria-label="Start Timer"><i class="fas fa-play"></i><span class="tooltip">Start Timer</span></button>
-                            `}
-                            <button onclick="event.stopPropagation(); showTaskDetails('Week${state.currentWeek}', '${state.currentDay}', ${index})" class="relative px-3 py-1 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition duration-300" aria-label="View Task Details"><i class="fas fa-info-circle"></i><span class="tooltip">View Details</span></button>
-                            <button onclick="event.stopPropagation(); duplicateTaskToNextDay('Week${state.currentWeek}', '${state.currentDay}', ${index})" class="relative px-3 py-1 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition duration-300" aria-label="Duplicate Task to Next Day"><i class="fas fa-copy"></i><span class="tooltip">Duplicate to Next Day</span></button>
-                            <button onclick="event.stopPropagation(); showDeleteConfirmation('Week${state.currentWeek}', '${state.currentDay}', ${index})" class="relative px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-300" aria-label="Delete Task"><i class="fas fa-trash-alt"></i><span class="tooltip">Delete Task</span></button>
-                        `}
-                    </div>
+// Render Single Task - Creates HTML for a single task card
+function renderTask(task, index, week, isPast) {
+    const statusClass = task.completed === true ? 'green' : task.completed === false ? 'red' : 'white';
+    const statusCircleDisabled = isPast && !state.allowPastActions ? 'disabled' : '';
+    const taskClass = task.completed === true ? 'completed' : 
+                     task.completed === false ? 'pending' : 
+                     task.timerStatus === 'running' ? 'running' : 'not-started';
+    
+    return `
+        <div class="task-card ${taskClass}" data-task-id="${week}-${state.currentDay}-${index}" 
+             draggable="true" 
+             ondragstart="handleDragStart(event, '${week}', '${state.currentDay}', ${index})" 
+             ondragover="handleDragOver(event)" 
+             ondragleave="handleDragLeave(event)" 
+             ondragend="handleDragEnd(event)" 
+             ondrop="handleDrop(event, '${week}', '${state.currentDay}', ${index})"
+             onclick="handleTaskCardDoubleTap('${week}', '${state.currentDay}', ${index})">
+            <div class="task-content">
+                <div class="status-circles">
+                    <div class="status-circle ${statusCircleDisabled} ${statusClass === 'green' ? 'green' : 'white'}" 
+                         title="${statusCircleDisabled ? 'Status disabled for past dates' : 'Mark as Completed'}" 
+                         ${!statusCircleDisabled ? `onclick="markTaskCompleted('${week}', '${state.currentDay}', ${index}, true)"` : ''}></div>
+                    <div class="status-circle ${statusCircleDisabled} ${statusClass === 'red' ? 'red' : 'white'}" 
+                         title="${statusCircleDisabled ? 'Status disabled for past dates' : 'Mark as Pending'}" 
+                         ${!statusCircleDisabled ? `onclick="markTaskCompleted('${week}', '${state.currentDay}', ${index}, false)"` : ''}></div>
+                    <div class="status-circle ${statusCircleDisabled} ${statusClass === 'white' ? 'white' : 'white'}" 
+                         title="${statusCircleDisabled ? 'Status disabled for past dates' : 'Mark as Not Started'}" 
+                         ${!statusCircleDisabled ? `onclick="markTaskCompleted('${week}', '${state.currentDay}', ${index}, null)"` : ''}></div>
                 </div>
-                <span class="time-spent">${utils.formatTime(getTaskTimeSpent(task))}</span>
+                <div class="task-details">
+                    <p class="subject ${task.subjectColor}">${task.subject}</p>
+                    <p class="sub-topic">${task.subTopic || 'None'}</p>
+                    <p class="topic">${task.topic}</p>
+                    <p class="details">${task.details}</p>
+                    ${task.taskType ? `<span class="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">${task.taskType}</span>` : ''}
+                </div>
+                <div class="task-actions">
+                    ${renderTaskActions(task, index, week, isPast)}
+                </div>
             </div>
+            <span class="time-spent">${utils.formatTime(getTaskTimeSpent(task))}</span>
+        </div>
+    `;
+}
+
+// Render Task Actions - Creates the action buttons for a task
+function renderTaskActions(task, index, week, isPast) {
+    if (isPast && !state.allowPastActions) {
+        return `
+            <button onclick="duplicateTaskToNextDay('${week}', '${state.currentDay}', ${index})" 
+                    class="relative px-3 py-1 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition duration-300" 
+                    aria-label="Duplicate Task to Next Day">
+                <i class="fas fa-copy"></i>
+                <span class="tooltip">Duplicate to Next Day</span>
+            </button>
         `;
-    }).join('');
+    }
+    
+    if (task.timerStatus === 'running') {
+        return `
+            <button onclick="event.stopPropagation(); pauseTaskTimer('${week}', '${state.currentDay}', ${index})" 
+                    class="relative px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition duration-300" 
+                    aria-label="Pause Timer">
+                <i class="fas fa-pause"></i>
+                <span class="tooltip">Pause Timer</span>
+            </button>
+            <button onclick="event.stopPropagation(); stopTaskTimer('${week}', '${state.currentDay}', ${index})" 
+                    class="relative px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-300" 
+                    aria-label="Stop Timer">
+                <i class="fas fa-stop"></i>
+                <span class="tooltip">Stop Timer</span>
+            </button>
+        `;
+    }
+    
+    if (task.timerStatus === 'paused') {
+        return `
+            <button onclick="event.stopPropagation(); startTaskTimer('${week}', '${state.currentDay}', ${index})" 
+                    class="relative px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-300" 
+                    aria-label="Resume Timer">
+                <i class="fas fa-play"></i>
+                <span class="tooltip">Resume Timer</span>
+            </button>
+            <button onclick="event.stopPropagation(); stopTaskTimer('${week}', '${state.currentDay}', ${index})" 
+                    class="relative px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-300" 
+                    aria-label="Stop Timer">
+                <i class="fas fa-stop"></i>
+                <span class="tooltip">Stop Timer</span>
+            </button>
+        `;
+    }
+    
+    return `
+        <button onclick="event.stopPropagation(); startTaskTimer('${week}', '${state.currentDay}', ${index})" 
+                class="relative px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-300" 
+                aria-label="Start Timer">
+            <i class="fas fa-play"></i>
+            <span class="tooltip">Start Timer</span>
+        </button>
+        <button onclick="event.stopPropagation(); showTaskDetails('${week}', '${state.currentDay}', ${index})" 
+                class="relative px-3 py-1 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition duration-300" 
+                aria-label="View Task Details">
+            <i class="fas fa-info-circle"></i>
+            <span class="tooltip">View Details</span>
+        </button>
+        <button onclick="event.stopPropagation(); duplicateTaskToNextDay('${week}', '${state.currentDay}', ${index})" 
+                class="relative px-3 py-1 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition duration-300" 
+                aria-label="Duplicate Task to Next Day">
+            <i class="fas fa-copy"></i>
+            <span class="tooltip">Duplicate to Next Day</span>
+        </button>
+        <button onclick="event.stopPropagation(); showDeleteConfirmation('${week}', '${state.currentDay}', ${index})" 
+                class="relative px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-300" 
+                aria-label="Delete Task">
+            <i class="fas fa-trash-alt"></i>
+            <span class="tooltip">Delete Task</span>
+        </button>
+    `;
 }
 
 function toggleSidebar() {
@@ -3566,6 +3637,58 @@ function markPreviousDayNotStartedAsPending() {
         }
     }
 }
+
+
+const Toast = {
+    show: function(message, type = 'success', duration = 3000) {
+        // Create container if it doesn't exist
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            document.body.appendChild(container);
+        }
+
+        // Create toast element - THIS IS WHERE YOU DECLARE const toast
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+            <span>${message}</span>
+            <button class="toast-close">&times;</button>
+        `;
+
+        // Add to container
+        container.appendChild(toast);
+
+        // Force animation to play
+        setTimeout(() => {
+            toast.style.transform = 'translateX(0)';
+        }, 10);
+
+        // Close button handler
+        toast.querySelector('.toast-close').addEventListener('click', () => {
+            this.hide(toast);
+        });
+
+        // Auto-hide if duration specified
+        if (duration > 0) {
+            setTimeout(() => {
+                this.hide(toast);
+            }, duration);
+        }
+
+        // Return the toast element if you want to reference it later
+        return toast;
+    },
+
+    hide: function(toast) {
+        toast.classList.add('hide');
+        toast.addEventListener('animationend', () => {
+            toast.remove();
+        });
+    }
+};
+
 
 function initializeApp() {
     try {
