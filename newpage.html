@@ -1,0 +1,3770 @@
+
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body style="background: linear-gradient(45deg, #c3dafe, #e9d5ff, #c3dafe); background-size: 200% 200%; animation: gradientAnimation 15s ease infinite; color: #1f2937; transition: background 0.5s ease, color 0.3s ease; font-family: 'Poppins', sans-serif;" class="min-h-screen flex justify-center">
+
+<style>
+    @keyframes gradientAnimation {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    .glassmorphism {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        transition: background 0.3s ease, border 0.3s ease, box-shadow 0.3s ease;
+    }
+    .neumorphic {
+        box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.1), -5px -5px 15px rgba(255, 255, 255, 0.5);
+        transition: all 0.3s ease;
+    }
+    .task-card {
+        position: relative;
+        border-radius: 1.5rem;
+        padding: 1.5rem;
+        margin-bottom: 0.8rem;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: none;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        cursor: pointer;
+    }
+    .task-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+        filter: brightness(1.03);
+    }
+    .task-card:hover::after {
+        content: 'Double-tap to edit';
+        visibility: visible;
+        background-color: #1f2937;
+        color: #ffffff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px 10px;
+        position: absolute;
+        z-index: 1;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 1;
+        transition: opacity 0.3s;
+    }
+    .task-card.completed {
+        background: linear-gradient(to right, #d1fae5, #a7f3d0) !important;
+    }
+    .task-card.pending {
+        background: linear-gradient(to right, #fee2e2, #fecaca) !important;
+    }
+    .task-card.not-started {
+        background: linear-gradient(to right, #f3f4f6, #e5e7eb) !important;
+    }
+    .task-card.running {
+        border: 3px solid #4f46e5;
+        box-shadow: 0 6px 18px rgba(79, 70, 229, 0.3);
+        background: rgba(255, 255, 255, 0.9);
+    }
+    .task-content {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: start;
+        gap: 0.8rem;
+    }
+    .status-circles {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        padding-top: 0.4rem;
+    }
+    .status-circle {
+        width: 0.9rem;
+        height: 0.9rem;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .status-circle.disabled {
+        pointer-events: none;
+        opacity: 0.5;
+    }
+    .status-circle.green {
+        background-color: #34D399;
+    }
+    .status-circle.red {
+        background-color: #F87171;
+    }
+    .status-circle.white {
+        background-color: #FFFFFF;
+        border: 2px solid #D1D5DB;
+    }
+    .status-circle:hover:not(.disabled) {
+        transform: scale(1.15);
+    }
+    .task-details {
+        flex: 1;
+    }
+    .task-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        align-items: center;
+    }
+    .time-spent {
+        position: absolute;
+        top: -0.6rem;
+        right: 1rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #4B5563;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 0.2rem 0.6rem;
+        border-radius: 1rem;
+        border: 1px solid #E5E7EB;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    .modal-backdrop {
+        backdrop-filter: blur(5px);
+        animation: fadeIn 0.3s ease;
+        overflow-y: auto;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    .modal-content {
+        animation: slideUp 0.5s ease forwards;
+    }
+    @keyframes slideUp {
+        from { transform: translateY(50px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    .floating-label-group {
+        position: relative;
+        margin-bottom: 1.2rem;
+    }
+    .floating-label {
+        position: absolute;
+        top: 0;
+        left: 0.6rem;
+        transform: translateY(0.6rem);
+        transition: all 0.2s ease-out;
+        color: #6B7280;
+        pointer-events: none;
+    }
+    .floating-select:focus + .floating-label,
+    .floating-select:not([value=""]) + .floating-label,
+    .floating-input:focus + .floating-label,
+    .floating-input:not(:placeholder-shown) + .floating-label {
+        transform: translateY(-0.4rem) scale(0.85);
+        color: #4F46E5;
+        background: white;
+        padding: 0 0.2rem;
+    }
+    .progress-bar {
+        width: 100%;
+        background-color: #e0e0e0;
+        border-radius: 9999px;
+        overflow: hidden;
+        height: 0.8rem;
+        margin-top: 0.4rem;
+    }
+    .progress-bar-fill {
+        height: 100%;
+        background: linear-gradient(to right, #4f46e5, #a855f7);
+        transition: width 0.5s ease-in-out;
+    }
+    .header-photo {
+        object-fit: cover;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        transition: border 0.3s ease;
+    }
+    .tooltip {
+        visibility: hidden;
+        background-color: #1f2937;
+        color: #ffffff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 4px 8px;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 0.8rem;
+    }
+    button:hover .tooltip {
+        visibility: visible;
+        opacity: 1;
+    }
+    .custom-checkbox {
+        appearance: none;
+        width: 1.1rem;
+        height: 1.1rem;
+        border: 2px solid #4f46e5;
+        border-radius: 0.2rem;
+        background-color: white;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .custom-checkbox:checked {
+        background-color: #4f46e5;
+        border-color: #4f46e5;
+    }
+    .custom-checkbox:checked::after {
+        content: '\2713';
+        color: white;
+        font-size: 0.8rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+    }
+    .search-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+    .search-clear {
+        position: absolute;
+        right: 0.6rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: transparent;
+        border: none;
+        color: #6B7280;
+        cursor: pointer;
+        font-size: 1.1rem;
+        display: none;
+        padding: 0;
+        line-height: 1;
+    }
+    .search-clear.visible {
+        display: block;
+    }
+    .search-clear:hover {
+        color: #4F46E5;
+    }
+    .floating-button {
+        position: fixed !important;
+        bottom: 16px !important;
+        z-index: 1000 !important;
+        background: linear-gradient(to right, #4f46e5, #a855f7);
+        border-radius: 50% !important;
+        width: 46px !important;
+        height: 46px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+    }
+    .floating-add-task-btn {
+        right: 16px !important;
+    }
+    .task-details .subject {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #fa023c;
+    }
+    .task-details .sub-topic {
+        font-size: 0.9rem;
+        color: #2c5282;
+    }
+    .task-details .topic {
+        font-size: 1rem;
+        color: #0a05a3;
+    }
+    .task-details .details {
+        font-size: 0.9rem;
+        color: #4d4804;
+    }
+    [data-theme="dark"] .task-details .subject {
+        color: #E5E7EB;
+    }
+    [data-theme="dark"] .task-details .sub-topic {
+        color: #BEE3F8;
+    }
+    [data-theme="dark"] .task-details .topic {
+        color: #D1D5DB;
+    }
+    [data-theme="dark"] .task-details .details {
+        color: #9CA3AF;
+    }
+    [data-theme="dark"] .task-details .time-spent-text {
+        color: #9CA3AF;
+    }
+    [data-theme="dark"] {
+        background: linear-gradient(to right, #1e3a8a, #5b21b6, #1e3a8a);
+        color: #e5e7eb;
+    }
+    [data-theme="dark"] .glassmorphism {
+        background: rgba(31, 41, 55, 0.5);
+        border-color: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    [data-theme="dark"] .neumorphic {
+        box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3), -5px -5px 15px rgba(255, 255, 255, 0.05);
+    }
+    [data-theme="dark"] .floating-input:focus + .floating-label,
+    [data-theme="dark"] .floating-input:not(:placeholder-shown) + .floating-label,
+    [data-theme="dark"] .floating-select:focus + .floating-label,
+    [data-theme="dark"] .floating-select:not([value=""]) + .floating-label {
+        background: #1f2937;
+        color: #a855f7;
+    }
+    .progress-bar {
+        background-color: #374151;
+    }
+    [data-theme="dark"] .tooltip {
+        background-color: #374151;
+    }
+    [data-theme="dark"] .custom-checkbox {
+        border-color: #a855f7;
+        background-color: #1f2937;
+    }
+    [data-theme="dark"] .custom-checkbox:checked {
+        background-color: #a855f7;
+        border-color: #a855f7;
+    }
+    [data-theme="dark"] .search-clear:hover {
+        color: #a855f7;
+    }
+    [data-theme="dark"] .floating-button {
+        background: linear-gradient(to right, #3b82f6, #d946ef);
+    }
+    [data-theme="dark"] .task-card {
+        background: rgba(31, 41, 55, 0.7);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    [data-theme="dark"] .task-card.running {
+        border: 3px solid #a855f7;
+        box-shadow: 0 6px 18px rgba(168, 85, 247, 0.3);
+        background: rgba(31, 41, 55, 0.8);
+    }
+    [data-theme="dark"] .task-card:hover {
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+    }
+    [data-theme="dark"] .task-card:hover::after {
+        background-color: #374151;
+    }
+    [data-theme="dark"] .time-spent {
+        background: rgba(31, 41, 55, 0.9);
+        border-color: #4B5563;
+        color: #D1D5DB;
+    }
+    .chart-container {
+        position: relative;
+        width: 100%;
+        height: 280px;
+        overflow: hidden;
+    }
+    .modal-content {
+        max-height: 85vh;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: #4f46e5 #e5e7eb;
+    }
+    .modal-content::-webkit-scrollbar {
+        width: 6px;
+    }
+    .modal-content::-webkit-scrollbar-track {
+        background: #e5e7eb;
+    }
+    .modal-content::-webkit-scrollbar-thumb {
+        background-color: #4f46e5;
+        border-radius: 3px;
+    }
+    [data-theme="dark"] .modal-content::-webkit-scrollbar-track {
+        background: #374151;
+    }
+    [data-theme="dark"] .modal-content::-webkit-scrollbar-thumb {
+        background-color: #a855f7;
+    }
+    .ai-assistant-message {
+        max-width: 80%;
+        padding: 10px 14px;
+        border-radius: 16px;
+        margin-bottom: 6px;
+        word-wrap: break-word;
+        font-size: 0.9rem;
+    }
+    .ai-assistant-user {
+        align-self: flex-end;
+        background-color: #4f46e5;
+        color: white;
+        border-bottom-right-radius: 4px;
+    }
+    .ai-assistant-bot {
+        align-self: flex-start;
+        background-color: #f3f4f6;
+        color: #1f2937;
+        border-bottom-left-radius: 4px;
+    }
+    [data-theme="dark"] .ai-assistant-bot {
+        background-color: #374151;
+        color: #e5e7eb;
+    }
+    .typing-indicator {
+        display: flex;
+        padding: 6px;
+    }
+    .typing-indicator span {
+        height: 6px;
+        width: 6px;
+        margin: 0 2px;
+        background-color: #9ca3af;
+        border-radius: 50%;
+        display: inline-block;
+        animation: typing 1s infinite ease-in-out;
+    }
+    .typing-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+    .typing-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+    @keyframes typing {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-4px); }
+    }
+
+    /* Sidebar Styles */
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 200px;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        border-right: 1px solid rgba(0, 0, 0, 0.1);
+        padding: 12px;
+        overflow-y: auto;
+        z-index: 100;
+        transition: transform 0.3s ease;
+    }
+
+    [data-theme="dark"] .sidebar {
+        background: rgba(31, 41, 55, 0.9);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar-header {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 16px;
+        color: #4f46e5;
+        text-align: center;
+        font-family: 'Playfair Display', serif;
+    }
+
+    .sidebar-section {
+        margin-bottom: 16px;
+    }
+
+    .sidebar-section-title {
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: #4f46e5;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.9rem;
+    }
+
+    .sidebar-item {
+        display: flex;
+        align-items: center;
+        padding: 6px 8px;
+        border-radius: 6px;
+        margin-bottom: 4px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        gap: 8px;
+        font-size: 0.85rem;
+    }
+
+    .sidebar-item:hover {
+        background-color: rgba(79, 70, 229, 0.1);
+    }
+
+    .sidebar-item.active {
+        background-color: rgba(79, 70, 229, 0.2);
+        font-weight: bold;
+    }
+
+    .sidebar-item i {
+        width: 16px;
+        text-align: center;
+        font-size: 0.85rem;
+    }
+
+    .sidebar-divider {
+        height: 1px;
+        background-color: rgba(0, 0, 0, 0.1);
+        margin: 12px 0;
+    }
+
+    [data-theme="dark"] .sidebar-divider {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Main content adjustment */
+    .main-content {
+        margin-left: -100px;
+        transition: margin-left 0.3s ease;
+    }
+
+    /* Mobile menu button */
+    .mobile-menu-button {
+        position: fixed;
+        left: 8px;
+        top: 8px;
+        z-index: 101;
+        display: none;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    [data-theme="dark"] .mobile-menu-button {
+        background: rgba(31, 41, 55, 0.9);
+    }
+
+    /* Day Complete Notification */
+    .day-complete-notification {
+        position: fixed;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: white;
+        padding: 16px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-width: 380px;
+        width: 90%;
+        animation: slideUp 0.3s ease-out;
+    }
+
+    [data-theme="dark"] .day-complete-notification {
+        background: #1f2937;
+        color: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+.day-complete-notification {
+    position: fixed;
+    top: 4px;
+    right: 4px;
+    left: auto;
+    transform: none;
+    /* other styles remain unchanged */
+}
+
+    @media (max-width: 1024px) {
+        .sidebar {
+            transform: translateX(-100%);
+            width: 180px;
+        }
+        .sidebar.open {
+            transform: translateX(0);
+        }
+        .main-content {
+            margin-left: 0;
+        }
+        .mobile-menu-button {
+            display: flex;
+        }
+        #toast {
+            top: 10px;
+            right: 10px;
+            max-width: calc(100% - 20px);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .sidebar {
+            width: 160px;
+            padding: 10px;
+        }
+        .task-card {
+            padding: 1.2rem;
+        }
+        .ai-assistant-message {
+            max-width: 90%;
+            padding: 8px 12px;
+        }
+    }
+
+</style>
+
+<div class="mobile-menu-button" onclick="toggleSidebar()">
+    <i class="fas fa-bars"></i>
+</div>
+
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">Study Planner</div>
+    
+    <div class="sidebar-section">
+        <div class="sidebar-item" onclick="toggleAddTaskForm()">
+            <i class="fas fa-plus"></i>
+            <span>Add Task</span>
+        </div>
+        <div class="sidebar-item" onclick="focusSearch()">
+            <i class="fas fa-search"></i>
+            <span>Search Tasks</span>
+        </div>
+    </div>
+    
+    <div class="sidebar-divider"></div>
+    
+<div class="sidebar-section">
+    <div class="sidebar-section-title">
+        <i class="fas fa-filter"></i>
+        <span>Task Filters</span>
+    </div>
+    <div class="sidebar-item" onclick="filterTasksByStatus('completed')">
+        <i class="fas fa-check-circle"></i>
+        <span>Completed</span>
+    </div>
+    <div class="sidebar-item" onclick="filterTasksByStatus('pending')">
+        <i class="fas fa-clock"></i>
+        <span>Pending</span>
+    </div>
+    <div class="sidebar-item" onclick="filterTasksByStatus('notStarted')">
+        <i class="fas fa-circle"></i>
+        <span>Not Started</span>
+    </div>
+</div>
+    
+    <div class="sidebar-divider"></div>
+    
+    <div class="sidebar-section">
+        <div class="sidebar-section-title">
+            <i class="fas fa-chart-line"></i>
+            <span>Progress</span>
+        </div>
+        <div class="sidebar-item" onclick="openProgressChartModal()">
+            <i class="fas fa-tasks"></i>
+            <span>Task Progress</span>
+        </div>
+        <div class="sidebar-item" onclick="openSubjectProgressModal()">
+            <i class="fas fa-book"></i>
+            <span>Subject Progress</span>
+        </div>
+        <div class="sidebar-item" onclick="openTaskTimeSpentModal()">
+            <i class="fas fa-clock"></i>
+            <span>Time Spent</span>
+        </div>
+    </div>
+    
+    <div class="sidebar-divider"></div>
+    
+    <div class="sidebar-section">
+        <div class="sidebar-item" onclick="document.getElementById('recycleBin').scrollIntoView({ behavior: 'smooth' })">
+            <i class="fas fa-trash"></i>
+            <span>Recycle Bin</span>
+        </div>
+        <div class="sidebar-item" onclick="exportData()">
+            <i class="fas fa-file-export"></i>
+            <span>Export Data</span>
+        </div>
+        <div class="sidebar-item" onclick="triggerImport()">
+            <i class="fas fa-file-import"></i>
+            <span>Import Data</span>
+        </div>
+    </div>
+    
+    <div class="sidebar-divider"></div>
+    
+    <div class="sidebar-section">
+        <div class="sidebar-item" onclick="openAIAssistantModal()">
+            <i class="fas fa-robot"></i>
+            <span>AI Assistant</span>
+        </div>
+    </div>
+</div>
+
+<div class="main-content">
+    <!-- Your existing content goes here -->
+    <div class="max-w-5xl w-full mx-4 glassmorphism rounded-3xl p-8 my-8">
+        <!-- Header Section -->
+        <div class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white shadow-2xl rounded-2xl p-6 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 border border-indigo-200">
+            <img id="headerPhoto" src="https://via.placeholder.com/80" alt="Header Photo" class="w-20 h-20 rounded-full header-photo shadow-lg">
+            <div class="flex flex-col items-center md:items-start space-y-2">
+                <h1 class="text-2xl md:text-3xl font-['Playfair_Display'] font-bold text-white drop-shadow-md">SSC CGL Study Planner</h1>
+            </div>
+            <div class="flex flex-col items-center md:items-end space-y-2">
+                <span class="text-sm md:text-base font-['Playfair_Display'] font-semibold text-yellow-200 drop-shadow-md">TARGET: ASO</span>
+                <div class="flex items-center space-x-2">
+                    <button id="themeToggleButton" class="neumorphic rounded-full p-2 text-white relative" aria-label="Toggle Theme">
+                        <i class="fas fa-lightbulb text-xl"></i><span class="tooltip">Toggle Dark Mode</span>
+                    </button>
+                    <button id="settingsButton" class="neumorphic rounded-full p-2 text-white relative" aria-label="Open Settings">
+                        <i class="fas fa-cog text-xl"></i><span class="tooltip">Open Settings</span>
+                    </button>
+                    <button id="aiAssistantButton" class="neumorphic rounded-full p-2 text-white relative" aria-label="AI Study Assistant">
+                        <i class="fas fa-robot text-xl"></i><span class="tooltip">AI Study Assistant</span>
+                    </button>
+                </div>
+                <div id="editForm" class="hidden mt-2 bg-indigo-600 p-4 rounded-lg shadow-lg">
+                    <div class="space-y-4">
+                        <div class="floating-label-group">
+                            <input id="totalDaysInput" type="number" min="1" value="600" class="floating-input border-2 border-indigo-300 rounded-lg p-2 w-full text-black focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder=" " aria-required="true">
+                            <label for="totalDaysInput" class="floating-label text-white text-sm drop-shadow-md">Total Days (Day n/m)</label>
+                        </div>
+                        <div class="floating-label-group">
+                            <input id="startDateInput" type="date" value="2025-06-01" class="floating-input border-2 border-indigo-300 rounded-lg p-2 w-full text-black focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder=" " aria-required="true">
+                            <label for="startDateInput" class="floating-label text-white text-sm drop-shadow-md">Start Date</label>
+                        </div>
+                        <!-- Replace this in the settings form -->
+                          <div class="floating-label-group">
+                             <input id="headerPhotoInput" type="file" accept="image/*" class="floating-input border-2 border-indigo-300 rounded-lg p-2 w-full text-black focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder=" " aria-label="Header Photo">
+                             <label for="headerPhotoInput" class="floating-label text-white text-sm drop-shadow-md">Header Photo</label>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-white text-sm font-semibold drop-shadow-md">Days to Count in Day n/m</label>
+                            <div class="grid grid-cols-4 gap-2">
+                                <label class="flex items-center space-x-2 text-white text-sm"><input type="checkbox" value="Mo" class="custom-checkbox day-checkbox" checked aria-label="Count Monday"><span>Mo</span></label>
+                                <label class="flex items-center space-x-2 text-white text-sm"><input type="checkbox" value="Tu" class="custom-checkbox day-checkbox" checked aria-label="Count Tuesday"><span>Tu</span></label>
+                                <label class="flex items-center space-x-2 text-white text-sm"><input type="checkbox" value="We" class="custom-checkbox day-checkbox" checked aria-label="Count Wednesday"><span>We</span></label>
+                                <label class="flex items-center space-x-2 text-white text-sm"><input type="checkbox" value="Th" class="custom-checkbox day-checkbox" checked aria-label="Count Thursday"><span>Th</span></label>
+                                <label class="flex items-center space-x-2 text-white text-sm"><input type="checkbox" value="Fr" class="custom-checkbox day-checkbox" checked aria-label="Count Friday"><span>Fr</span></label>
+                                <label class="flex items-center space-x-2 text-white text-sm"><input type="checkbox" value="Sa" class="custom-checkbox day-checkbox" checked aria-label="Count Saturday"><span>Sa</span></label>
+                                <label class="flex items-center space-x-2 text-white text-sm"><input type="checkbox" value="Su" class="custom-checkbox day-checkbox" aria-label="Count Sunday"><span>Su</span></label>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="flex items-center space-x-2 text-white text-sm">
+                                <input type="checkbox" id="allowPastActions" class="custom-checkbox" aria-label="Allow actions on past dates">
+                                <span>Allow actions on past dates</span>
+                            </label>
+                            <label class="flex items-center space-x-2 text-white text-sm">
+                                <input type="checkbox" id="markPendingOnDayComplete" class="custom-checkbox" aria-label="Mark pending on day complete">
+                                <span>Mark not started as pending when day is completed</span>
+                            </label>
+                        </div>
+                        <input type="file" id="importFileInput" accept=".json" class="hidden" aria-label="Import File">
+                        <div class="flex justify-end space-x-2">
+                            <button onclick="toggleEditForm()" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition duration-300 text-sm" aria-label="Cancel Edit">Cancel</button>
+                            <button onclick="saveSettings()" class="px-4 py-2 bg-indigo-800 text-white rounded-lg hover:bg-indigo-900 transition duration-300 text-sm" aria-label="Save Settings">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Date and Time Section -->
+        <div class="mt-4 flex justify-between items-center bg-indigo-600/30 rounded-lg p-4">
+            <span id="currentDate" class="text-lg font-['Playfair_Display'] text-black">Monday, June 23, 2025</span>
+            <span id="currentDayCount" class="text-lg font-['Playfair_Display'] text-black">Day 22/600</span>
+            <span id="currentTime" class="text-lg font-['Playfair_Display'] text-black">11:17 PM IST</span>
+        </div>
+
+        <!-- Week/Day Selector -->
+        <div class="bg-white/90 shadow-2xl rounded-2xl p-6 mt-8 flex flex-col space-y-8 border border-gray-100">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <span class="font-semibold text-gray-800 text-xl font-['Playfair_Display'] text-shadow-sm">Week:</span>
+                    <select id="weekSelect" onchange="updateWeek()" class="border-2 border-indigo-200 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white/50" aria-label="Select Week"></select>
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="triggerImport()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300 text-sm" aria-label="Import Data">Import</button>
+                    <button onclick="exportData()" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-300 text-sm" aria-label="Export Data">Export</button>
+                </div>
+            </div>
+            <div class="flex flex-wrap justify-center gap-3" id="dayButtons"></div>
+        </div>
+
+        <!-- Add Task Form -->
+        <div id="addTaskForm" class="bg-white/90 shadow-2xl rounded-2xl p-6 mt-8 hidden border border-gray-100">
+            <h3 id="taskFormTitle" class="font-bold text-2xl text-gray-800 mb-6 font-['Playfair_Display'] text-shadow-sm">Add New Task</h3>
+            <div class="space-y-6">
+                <div class="floating-label-group">
+                    <select id="taskSubject" class="floating-select border-2 border-gray-300 rounded-lg p-2 w-full focus:outline-none focus:ring-2 focus:ring-indigo-400" aria-required="true">
+                        <option value="" disabled selected>Select Subject</option>
+                        <option value="Quantitative Aptitude">Quantitative Aptitude</option>
+                        <option value="Reasoning">Reasoning</option>
+                        <option value="English">English</option>
+                        <option value="General Awareness">General Awareness</option>
+                        <option value="Mock">Mock</option>
+                    </select>
+                    <label for="taskSubject" class="floating-label font-semibold text-sm text-gray-800 text-shadow-sm">Subject</label>
+                </div>
+                <div class="floating-label-group">
+                    <select id="taskSubTopic" class="floating-select border-2 border-gray-300 rounded-lg p-2 w-full focus:outline-none focus:ring-2 focus:ring-indigo-400" aria-required="true" disabled>
+                        <option value="" disabled selected>Select Sub-Topic</option>
+                    </select>
+                    <label for="taskSubTopic" class="floating-label font-semibold text-sm text-gray-800 text-shadow-sm">Sub-Topic</label>
+                </div>
+                <div class="floating-label-group">
+                    <select id="taskType" class="floating-select border-2 border-gray-300 rounded-lg p-2 w-full focus:outline-none focus:ring-2 focus:ring-indigo-400" aria-required="true">
+                        <option value="" disabled selected>Select Task Type</option>
+                        <option value="Lecture">Lecture</option>
+                        <option value="Reading">Reading</option>
+                        <option value="Practice">Practice</option>
+                        <option value="Analysis">Analysis</option>
+                        <option value="Revision">Revision</option>
+                        <option value="Test">Test</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <label for="taskType" class="floating-label font-semibold text-sm text-gray-800 text-shadow-sm">Task Type</label>
+                </div>
+                <div class="floating-label-group">
+                    <input id="taskTopic" type="text" class="floating-input border-2 border-gray-300 rounded-lg p-2 w-full focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder=" " aria-required="true">
+                    <label for="taskTopic" class="floating-label font-semibold text-sm text-gray-800 text-shadow-sm">Description</label>
+                </div>
+                <div class="floating-label-group">
+                    <input id="taskDetails" type="text" class="floating-input border-2 border-gray-300 rounded-lg p-2 w-full focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder=" ">
+                    <label for="taskDetails" class="floating-label font-semibold text-sm text-gray-800 text-shadow-sm">Details</label>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button onclick="cancelTaskForm()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-300" aria-label="Cancel Task Form">Cancel</button>
+                    <button id="taskFormSubmit" onclick="submitTaskForm()" class="px-4 py-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white rounded-lg hover:bg-indigo-600 transition duration-300" aria-label="Submit Task">Submit</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task Stats -->
+        <div class="bg-white/90 shadow-2xl rounded-2xl p-6 mt-8 flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0 border border-gray-100 stats-section">
+            <div class="flex items-center space-x-3 w-full md:w-auto order-1">
+                <div class="flex items-center space-x-3">
+                    <span class="font-bold text-xl text-gray-800 font-['Playfair_Display'] text-shadow-sm">Search Tasks:</span>
+                    <div class="search-container w-full md:w-64">
+                        <input id="taskSearch" type="text" class="border-2 border-gray-300 rounded-lg p-2 w-full focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white/50 pr-8" placeholder="Search by subject or description" aria-label="Search Tasks">
+                        <button id="searchClear" class="search-clear" onclick="clearSearch()" aria-label="Clear Search"><i class="fas fa-times-circle"></i></button>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center justify-center w-full md:w-auto order-2">
+                <span id="taskCount" class="text-lg font-['Playfair_Display'] text-gray-800">Task: 0/0</span>
+            </div>
+            <div class="w-full md:w-auto order-3">
+                <div class="text-lg font-['Playfair_Display'] text-gray-800">
+                    Total: <span id="totalTasks">0</span> | Completed: <span id="completedTasks">0</span> | Completion: <span id="completionPercentage">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div id="progressBarFill" class="progress-bar-fill" style="width: 0%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task Filters -->
+        <div class="bg-white/90 shadow-2xl rounded-2xl p-6 mt-4 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 border border-gray-100">
+            <div class="flex items-center space-x-3 w-full md:w-auto">
+                <span class="font-semibold text-gray-800 text-lg">Filter by:</span>
+                <select id="subjectFilter" onchange="updateTasks()" class="border-2 border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white/50">
+                    <option value="all">All Subjects</option>
+                    <option value="Quantitative Aptitude">Quantitative Aptitude</option>
+                    <option value="Reasoning">Reasoning</option>
+                    <option value="English">English</option>
+                    <option value="General Awareness">General Awareness</option>
+                    <option value="Mock">Mock</option>
+                </select>
+                <select id="taskTypeFilter" onchange="updateTasks()" class="border-2 border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white/50">
+                    <option value="all">All Types</option>
+                    <option value="Lecture">Lecture</option>
+                    <option value="Reading">Reading</option>
+                    <option value="Practice">Practice</option>
+                    <option value="Analysis">Analysis</option>
+                    <option value="Revision">Revision</option>
+                    <option value="Test">Test</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="flex items-center space-x-3 w-full md:w-auto">
+                <span class="font-semibold text-gray-800 text-lg">Sort by:</span>
+                <select id="taskSort" onchange="updateTasks()" class="border-2 border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white/50">
+                    <option value="status">Status</option>
+                    <option value="subject">Subject</option>
+                    <option value="type">Type</option>
+                    <option value="time">Time Spent</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Task List -->
+        <div id="taskList" class="mt-8 space-y-6 mb-8"></div>
+
+        <!-- Daily Summary -->
+        <div id="dailySummary" class="bg-white/90 shadow-2xl rounded-2xl p-6 mt-8 flex flex-col space-y-4 border border-gray-100">
+            <h3 class="font-bold text-2xl text-gray-800 font-['Playfair_Display'] text-shadow-sm">Daily Summary</h3>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <p class="text-gray-800 text-lg font-semibold">Total Time Spent</p>
+                    <p class="text-2xl font-bold" id="dailyTimeTotal">0h 0m 0s</p>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg">
+                    <p class="text-gray-800 text-lg font-semibold">Completed Tasks</p>
+                    <p class="text-2xl font-bold text-green-600" id="completedTasksCount">0</p>
+                </div>
+                <div class="bg-red-50 p-4 rounded-lg">
+                    <p class="text-gray-800 text-lg font-semibold">Pending Tasks</p>
+                    <p class="text-2xl font-bold text-red-600" id="pendingTasksCount">0</p>
+                </div>
+                <div class="bg-yellow-50 p-4 rounded-lg">
+                    <p class="text-gray-800 text-lg font-semibold">Total Tasks</p>
+                    <p class="text-2xl font-bold text-yellow-600" id="totalTasksCount">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recycle Bin -->
+        <div id="recycleBin" class="bg-white/90 shadow-2xl rounded-2xl p-6 mt-4 flex flex-col space-y-4 border border-gray-100">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-2xl text-gray-800 font-bold font-['Playfair_Display']">Deleted Tasks</h3>
+                <button onclick="clearAllDeletedTasks()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-200 disabled:opacity-50" id="clearAllButton" disabled aria-label="Clear All Deleted Tasks">Clear All</button>
+            </div>
+            <div id="deletedTasksList" class="space-y-4"></div>
+        </div>
+
+        <!-- AI Study Assistant Modal -->
+        <div id="aiAssistantModal" class="fixed inset-0 bg-black/50 modal-backdrop flex items-center justify-center hidden" role="dialog" aria-labelledby="aiAssistantModalTitle">
+            <div class="bg-white/90 rounded-2xl p-6 w-full max-w-lg shadow-lg border border-gray-200 modal-content">
+                <h3 id="aiAssistantModalTitle" class="font-bold text-2xl text-gray-800 mb-4 font-['Playfair_Display'] text-shadow-sm">AI Study Assistant</h3>
+                <div id="aiAssistantChat" class="h-96 overflow-y-auto mb-4 flex flex-col space-y-2 p-2">
+                    <div class="ai-assistant-message ai-assistant-bot">
+                        Hello! I'm your AI Study Assistant. How can I help you with your SSC CGL preparation today?
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <input id="aiAssistantInput" type="text" class="flex-1 border-2 border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Ask me anything about your study plan..." aria-label="AI Assistant Input">
+                    <button onclick="sendAIQuery()" class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-pink-500 text-white rounded-lg hover:bg-indigo-600 transition duration-300" aria-label="Send Message">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+                <div class="flex justify-end mt-4">
+                    <button onclick="closeAIAssistantModal()" class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-pink-500 text-white rounded-lg hover:bg-indigo-600 transition duration-300" aria-label="Close AI Assistant">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subject Progress Modal -->
+        <div id="subjectProgressModal" class="fixed inset-0 bg-black/50 modal-backdrop flex items-center justify-center hidden" role="dialog" aria-labelledby="subjectProgressModalTitle">
+            <div class="bg-white/90 rounded-2xl p-6 w-full max-w-lg shadow-lg border border-gray-200 modal-content">
+                <h3 id="subjectProgressModalTitle" class="font-bold text-2xl text-gray-800 mb-4 font-['Playfair_Display'] text-shadow-sm">Subject Progress</h3>
+                <div class="flex flex-wrap justify-center gap-2 mb-4">
+                    <select id="subjectProgressTimeframe" onchange="updateSubjectProgressChart()" class="border-2 border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100" aria-label="Select Subject Progress Timeframe">
+                        <option value="daily">Day</option>
+                        <option value="weekly">Week</option>
+                        <option value="monthly">Month</option>
+                    </select>
+                    <select id="subjectProgressSubject" onchange="updateSubjectProgressChart()" class="border-2 border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100" aria-label="Select Subject">
+                        <option value="all">All Subjects</option>
+                        <option value="Quantitative Aptitude">Quantitative Aptitude</option>
+                        <option value="Reasoning">Reasoning</option>
+                        <option value="English">English</option>
+                        <option value="General Awareness">General Awareness</option>
+                        <option value="Mock">Mock</option>
+                    </select>
+                    <select id="subjectProgressWeek" onchange="updateSubjectProgressChart()" class="border-2 border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100" aria-label="Select Week for Subject Progress"></select>
+                </div>
+                <div class="chart-container">
+                    <canvas id="subjectProgressChart"></canvas>
+                </div>
+                
+                <div id="detailedSubjectChart" class="hidden mt-4">
+                    <h4 id="detailedSubjectTitle" class="font-bold text-xl text-gray-800 mb-2 font-['Playfair_Display']"></h4>
+                    <div class="chart-container">
+                        <canvas id="detailedSubjectProgressChart"></canvas>
+                    </div>
+                </div>
+                <div class="flex justify-end mt-6">
+                    <button onclick="closeSubjectProgressModal()" class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-pink-500 text-white rounded-lg hover:bg-indigo-600 transition duration-300" aria-label="Close Subject Progress">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task Time Spent Modal -->
+        <div id="taskTimeSpentModal" class="fixed inset-0 bg-black/50 modal-backdrop flex items-center justify-center hidden" role="dialog" aria-labelledby="taskTimeSpentModalTitle">
+            <div class="bg-white/90 rounded-2xl p-6 w-full max-w-lg shadow-lg border border-gray-200 modal-content">
+                <h3 id="taskTimeSpentModalTitle" class="font-bold text-2xl text-gray-800 mb-4 font-['Playfair_Display'] text-shadow-sm">Task Time Spent</h3>
+                <div class="flex flex-wrap justify-center gap-2 mb-4">
+                    <select id="taskTimeSpentTimeframe" onchange="updateTaskTimeSpentChart()" class="border-2 border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100" aria-label="Select Timeframe">
+                        <option value="daily">Day</option>
+                        <option value="weekly">Week</option>
+                        <option value="monthly">Month</option>
+                    </select>
+                    <select id="taskTimeSpentSubject" onchange="updateTaskTimeSpentChart()" class="border-2 border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100" aria-label="Select Subject">
+                        <option value="all">All Subjects</option>
+                        <option value="Quantitative Aptitude">Quantitative Aptitude</option>
+                        <option value="Reasoning">Reasoning</option>
+                        <option value="English">English</option>
+                        <option value="General Awareness">General Awareness</option>
+                        <option value="Mock">Mock</option>
+                    </select>
+                    <select id="taskTimeSpentWeek" onchange="updateTaskTimeSpentChart()" class="border-2 border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100" aria-label="Select Week for Time Spent"></select>
+                </div>
+                <div class="chart-container">
+                    <canvas id="taskTimeSpentChart"></canvas>
+                </div>
+                <div class="flex justify-end mt-6">
+                    <button onclick="closeTaskTimeSpentModal()" class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-pink-500 text-white rounded-lg hover:bg-indigo-600 transition duration-300" aria-label="Close">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Chart Modal -->
+        <div id="progressChartModal" class="fixed inset-0 bg-black/50 modal-backdrop flex items-center justify-center hidden" role="dialog" aria-labelledby="progressChartModalTitle">
+            <div class="bg-white/90 rounded-2xl p-6 w-full max-w-lg shadow-lg border border-gray-200 modal-content">
+                <h3 id="progressChartModalTitle" class="font-bold text-2xl text-gray-800 mb-4 font-['Playfair_Display'] text-shadow-sm">Task Progress</h3>
+                <div class="flex flex-wrap justify-center gap-2 mb-4">
+                    <select id="progressTimeframe" onchange="updateProgressChart()" class="border-2 border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100" aria-label="Select Progress Timeframe">
+                        <option value="daily">Day</option>
+                        <option value="weekly">Week</option>
+                        <option value="monthly">Month</option>
+                    </select>
+                    <select id="progressSubject" onchange="updateProgressChart()" class="border-2 border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100" aria-label="Select Subject">
+                        <option value="all">All Subjects</option>
+                        <option value="Quantitative Aptitude">Quantitative Aptitude</option>
+                        <option value="Reasoning">Reasoning</option>
+                        <option value="English">English</option>
+                        <option value="General Awareness">General Awareness</option>
+                        <option value="Mock">Mock</option>
+                    </select>
+                    <select id="progressStatus" onchange="updateProgressChart()" class="border-2 border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 hidden" aria-label="Select Status">
+                        <option value="all">All Statuses</option>
+                        <option value="completed">Completed</option>
+                        <option value="pending">Pending</option>
+                        <option value="notStarted">Not Started</option>
+                    </select>
+                    <select id="progressWeek" onchange="updateProgressChart()" class="border-2 border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100" aria-label="Select Week for Task Progress"></select>
+                </div>
+                <div class="chart-container">
+                    <canvas id="progressChart"></canvas>
+                </div>
+                <div class="flex justify-end mt-6">
+                    <button onclick="closeProgressChartModal()" class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-pink-500 text-white rounded-lg hover:bg-indigo-600 transition duration-300" aria-label="Close Progress Chart">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task Details Modal -->
+        <div id="taskDetailsModal" class="fixed inset-0 bg-black/50 modal-backdrop flex items-center justify-center hidden" role="dialog" aria-labelledby="taskDetailsModalTitle">
+            <div class="bg-white/90 rounded-2xl p-6 w-full max-w-md shadow-lg border border-gray-200 modal-content">
+                <h3 id="taskDetailsModalTitle" class="font-bold text-2xl text-gray-800 mb-4 font-['Playfair_Display'] text-shadow-sm">Task Details</h3>
+                <div id="taskDetailsContent" class="space-y-4"></div>
+                <div class="flex justify-end mt-6">
+                    <button onclick="closeTaskDetailsModal()" class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-pink-500 text-white rounded-lg hover:bg-indigo-600 transition duration-300" aria-label="Close Task Details">Close</button>
+                </div>
+            </div>
+        </div>
+
+
+<!-- Delete Confirm Modal -->
+<div id="deleteConfirmModal" class="fixed inset-0 bg-black/50 modal-backdrop hidden" role="dialog" aria-labelledby="deleteConfirmModalTitle">
+    <div class="absolute top-4 right-4 bg-white/90 rounded-2xl p-6 w-full max-w-sm shadow-lg border border-gray-200 modal-content">
+        <h3 id="deleteConfirmModalTitle" class="font-bold text-2xl text-gray-800 mb-4 font-['Playfair_Display'] text-shadow-sm">Confirm Deletion</h3>
+        <p class="text-gray-700 mb-6">Are you sure you want to move this task to the recycle bin?</p>
+        <div class="flex justify-end space-x-3">
+            <button onclick="cancelDelete()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-300" aria-label="Cancel Deletion">Cancel</button>
+            <button onclick="confirmDelete()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-300" aria-label="Confirm Deletion">OK</button>
+        </div>
+    </div>
+</div>
+</div>
+    <!-- Toast Notification -->
+   <div id="toast" class="fixed top-4 right-4 hidden bg-gray-600 text-white p-4 rounded-lg shadow-lg">
+        <span id="toastMessage"></span><button onclick="hideToast()" class="ml-2 text-white">×</button>
+    </div>
+
+
+
+    <script>
+// State Management
+const state = {
+    startDate: new Date('2025-06-01'),
+    currentWeek: 1,
+    currentDay: 'Mo',
+    totalWeekdays: 0,
+    baseDays: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
+    countedDays: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+    tasks: {},
+    deletedTasks: [],
+    headerPhotoUrl: 'https://via.placeholder.com/80',
+    draggedIndex: null,
+    chart: null,
+    subjectChart: null,
+    detailedSubjectChart: null,
+    taskTimeSpentChart: null,
+    editingTask: null,
+    pendingDeleteModal: null,
+    isAdd: true,
+    timers: { active: new Set() },
+    dailyTimeRecords: new Map(),
+    allowPastActions: false,
+    markPendingOnDayComplete: false,
+    lastTap: 0,
+    timerInterval: null,
+    aiAssistantTyping: false,
+    aiAssistantMessages: [
+        { role: 'assistant', content: 'Hello! I\'m your AI Study Assistant. How can I help you with your SSC CGL preparation today?' }
+    ],
+    showDayCompleteNotification: false,
+    pendingDayComplete: null // {week, day}
+};
+
+// Sub-Topic Mapping
+const subTopicMap = {
+    'Quantitative Aptitude': ['Arithmetic', 'Advance', 'Calculation', 'Formula'],
+    'Reasoning': ['Verbal', 'Non-Verbal'],
+    'English': ['Grammar', 'Vocabulary', 'Comprehension'],
+    'General Awareness': ['History', 'Geography', 'Polity', 'Economy', 'Biology', 'Physics', 'Chemistry', 'Static GK', 'Current Affairs'],
+    'Mock': ['Mock Test', 'Mock Test Analysis']
+};
+
+// Task Types
+const taskTypes = ['Lecture', 'Reading', 'Practice', 'Analysis', 'Revision', 'Test', 'Other'];
+
+// Color Mappings
+const subjectColors = {
+    'Quantitative Aptitude': '#1E40AF', // Dark blue
+    'Reasoning': '#F97316',             // Orange
+    'English': '#3B82F6',               // Blue
+    'General Awareness': '#F59E0B',     // Yellow
+    'Mock': '#78350F'                   // Brown
+};
+
+const subTopicColors = {
+    // Quantitative Aptitude
+    'Arithmetic': '#6B7280',            // Gray
+    'Advance': '#F97316',               // Orange
+    'Calculation': '#3B82F6',           // Blue
+    'Formula': '#F59E0B',               // Yellow
+    
+    // Reasoning
+    'Verbal': '#3B82F6',                // Blue
+    'Non-Verbal': '#78350F',            // Brown
+    
+    // English
+    'Grammar': '#F97316',               // Orange
+    'Vocabulary': '#6B7280',            // Gray
+    'Comprehension': '#1E40AF',         // Dark blue
+    
+    // General Awareness
+    'History': '#F97316',               // Orange
+    'Geography': '#78350F',             // Brown
+    'Polity': '#1E40AF',                // Dark blue
+    'Economy': '#F59E0B',               // Yellow
+    'Biology': '#6B7280',               // Gray
+    'Physics': '#6B7280',               // Gray
+    'Chemistry': '#6B7280',             // Gray
+    'Static GK': '#3B82F6',             // Blue
+    'Current Affairs': '#8B5CF6',       // Violet
+    
+    // Mock
+    'Mock Test': '#1E40AF',             // Dark blue
+    'Mock Test Analysis': '#F97316'     // Orange
+};
+
+const statusColors = {
+    completed: '#34D399',               // Green
+    pending: '#F87171',                 // Red
+    notStarted: '#D1D5DB'               // White/Gray
+};
+
+// DOM Elements
+const DOM = {
+    editForm: document.getElementById('editForm'),
+    totalDaysInput: document.getElementById('totalDaysInput'),
+    startDateInput: document.getElementById('startDateInput'),
+    headerPhotoInput: document.getElementById('headerPhotoInput'),
+    headerPhoto: document.getElementById('headerPhoto'),
+    currentDate: document.getElementById('currentDate'),
+    currentDayCount: document.getElementById('currentDayCount'),
+    currentTime: document.getElementById('currentTime'),
+    taskList: document.getElementById('taskList'),
+    weekSelect: document.getElementById('weekSelect'),
+    dayButtons: document.getElementById('dayButtons'),
+    addTaskForm: document.getElementById('addTaskForm'),
+    taskFormTitle: document.getElementById('taskFormTitle'),
+    taskSubject: document.getElementById('taskSubject'),
+    taskSubTopic: document.getElementById('taskSubTopic'),
+    taskType: document.getElementById('taskType'),
+    taskTopic: document.getElementById('taskTopic'),
+    taskDetails: document.getElementById('taskDetails'),
+    taskFormSubmit: document.getElementById('taskFormSubmit'),
+    taskSearch: document.getElementById('taskSearch'),
+    searchClear: document.getElementById('searchClear'),
+    dailyTimeTotal: document.getElementById('dailyTimeTotal'),
+    completedTasksCount: document.getElementById('completedTasksCount'),
+    pendingTasksCount: document.getElementById('pendingTasksCount'),
+    totalTasksCount: document.getElementById('totalTasksCount'),
+    taskDetailsModal: document.getElementById('taskDetailsModal'),
+    taskDetailsContent: document.getElementById('taskDetailsContent'),
+    deleteConfirmModal: document.getElementById('deleteConfirmModal'),
+    progressChartModal: document.getElementById('progressChartModal'),
+    progressTimeframe: document.getElementById('progressTimeframe'),
+    progressWeek: document.getElementById('progressWeek'),
+    progressSubject: document.getElementById('progressSubject'),
+    progressStatus: document.getElementById('progressStatus'),
+    progressChart: document.getElementById('progressChart'),
+    subjectProgressModal: document.getElementById('subjectProgressModal'),
+    subjectProgressTimeframe: document.getElementById('subjectProgressTimeframe'),
+    subjectProgressWeek: document.getElementById('subjectProgressWeek'),
+    subjectProgressSubject: document.getElementById('subjectProgressSubject'),
+    subjectProgressChart: document.getElementById('subjectProgressChart'),
+    detailedSubjectChart: document.getElementById('detailedSubjectChart'),
+    detailedSubjectProgressChart: document.getElementById('detailedSubjectProgressChart'),
+    detailedSubjectTitle: document.getElementById('detailedSubjectTitle'),
+    taskTimeSpentModal: document.getElementById('taskTimeSpentModal'),
+    taskTimeSpentTimeframe: document.getElementById('taskTimeSpentTimeframe'),
+    taskTimeSpentWeek: document.getElementById('taskTimeSpentWeek'),
+    taskTimeSpentSubject: document.getElementById('taskTimeSpentSubject'),
+    taskTimeSpentChart: document.getElementById('taskTimeSpentChart'),
+    dayCheckboxes: document.querySelectorAll('.day-checkbox'),
+    toast: document.getElementById('toast'),
+    toastMessage: document.getElementById('toastMessage'),
+    recycleBin: document.getElementById('recycleBin'),
+    deletedTasksList: document.getElementById('deletedTasksList'),
+    taskCount: document.getElementById('taskCount'),
+    totalTasks: document.getElementById('totalTasks'),
+    completedTasks: document.getElementById('completedTasks'),
+    completionPercentage: document.getElementById('completionPercentage'),
+    progressBarFill: document.getElementById('progressBarFill'),
+    clearAllButton: document.getElementById('clearAllButton'),
+    importFileInput: document.getElementById('importFileInput'),
+    allowPastActions: document.getElementById('allowPastActions'),
+    markPendingOnDayComplete: document.getElementById('markPendingOnDayComplete'),
+    themeToggleButton: document.getElementById('themeToggleButton'),
+    settingsButton: document.getElementById('settingsButton'),
+    aiAssistantButton: document.getElementById('aiAssistantButton'),
+    aiAssistantModal: document.getElementById('aiAssistantModal'),
+    aiAssistantChat: document.getElementById('aiAssistantChat'),
+    aiAssistantInput: document.getElementById('aiAssistantInput'),
+    subjectFilter: document.getElementById('subjectFilter'),
+    taskTypeFilter: document.getElementById('taskTypeFilter'),
+    taskSort: document.getElementById('taskSort'),
+    dayCompleteNotification: document.getElementById('dayCompleteNotification')
+};
+
+// Day Colors
+const dayColors = {
+    Mo: { bg: 'bg-red-300', hoverBg: 'hover:bg-red-400' },
+    Tu: { bg: 'bg-orange-300', hoverBg: 'hover:bg-orange-400' },
+    We: { bg: 'bg-yellow-300', hoverBg: 'hover:bg-yellow-400' },
+    Th: { bg: 'bg-green-300', hoverBg: 'hover:bg-green-400' },
+    Fr: { bg: 'bg-blue-400', hoverBg: 'hover:bg-blue-500' },
+    Sa: { bg: 'bg-indigo-400', hoverBg: 'hover:bg-indigo-500' },
+    Su: { bg: 'bg-purple-400', hoverBg: 'hover:bg-purple-500' }
+};
+
+// Utility Functions
+const utils = {
+    storage: {
+        save: (key, value) => {
+            try {
+                localStorage.setItem(key, JSON.stringify(value));
+            } catch (error) {
+                console.error(`Failed to save ${key} to localStorage:`, error);
+                utils.showToast(`Error saving ${key}. Check browser storage settings.`, 'error');
+            }
+        },
+        load: key => {
+            try {
+                const data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : null;
+            } catch (error) {
+                console.error(`Failed to load ${key} from localStorage:`, error);
+                utils.showToast(`Error loading ${key}. Data may be corrupted.`, 'error');
+                return null;
+            }
+        }
+    },
+    getDayOfWeek: date => state.baseDays[date.getDay() === 0 ? 6 : date.getDay() - 1],
+    countWeekdaysBetween: (start, end) => {
+        let count = 0, current = new Date(start);
+        current.setHours(0, 0, 0, 0);
+        end.setHours(0, 0, 0, 0);
+        while (current <= end) {
+            if (state.countedDays.includes(utils.getDayOfWeek(current))) count++;
+            current.setDate(current.getDate() + 1);
+        }
+        return count;
+    },
+    calculateDate: (week, day) => {
+        const date = new Date(state.startDate);
+        date.setDate(date.getDate() + (week - 1) * 7 + state.baseDays.indexOf(day));
+        return date;
+    },
+    isPastDate: (week, day) => {
+        const taskDate = utils.calculateDate(parseInt(week.replace('Week', '')), day);
+        taskDate.setHours(0, 0, 0, 0);
+        const currentDate = new Date();
+        currentDate.setHours(0, 0, 0, 0);
+        return taskDate < currentDate;
+    },
+    triggerConfetti: () => confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }),
+    getMonthRange: date => ({ start: new Date(date.getFullYear(), date.getMonth(), 1), end: new Date(date.getFullYear(), date.getMonth() + 1, 0) }),
+    showToast: (msg, type = 'error') => {
+        DOM.toast.className = `fixed top-4 right-4 bg-${type === 'error' ? 'red' : 'green'}-600 text-white p-4 rounded-lg shadow-lg`;
+        DOM.toastMessage.textContent = msg;
+        DOM.toast.classList.remove('hidden');
+        setTimeout(() => utils.hideToast(), 3000);
+    },
+    hideToast: () => DOM.toast.classList.add('hidden'),
+    formatTime: seconds => {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${hours}h ${minutes}m ${secs}s`;
+    },
+
+    getDateKey: date => date.toISOString().split('T')[0],
+    validateUrl: url => {
+        try {
+            new URL(url);
+            return true;
+        } catch {
+            return false;
+        }
+    },
+    exportData: () => {
+        try {
+            const data = {
+                tasks: state.tasks,
+                deletedTasks: state.deletedTasks,
+                plannerHeaderPhoto: state.headerPhotoUrl,
+                plannerStartDate: state.startDate.toISOString(),
+                plannerTotalWeekdays: state.totalWeekdays,
+                plannerCountedDays: state.countedDays,
+                dailyTimeRecords: Object.fromEntries(state.dailyTimeRecords),
+                allowPastActions: state.allowPastActions,
+                markPendingOnDayComplete: state.markPendingOnDayComplete,
+                aiAssistantMessages: state.aiAssistantMessages
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `study-planner-data-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            utils.showToast('Data exported successfully', 'success');
+        } catch (error) {
+            console.error('Error exporting data:', error);
+            utils.showToast('Failed to export data', 'error');
+        }
+    },
+    importData: data => {
+        try {
+            if (!data.tasks || !data.plannerStartDate || !data.plannerTotalWeekdays || !data.plannerCountedDays) {
+                throw new Error('Invalid data format');
+            }
+            state.tasks = data.tasks;
+            state.deletedTasks = data.deletedTasks.map(item => ({
+                ...item,
+                deletionSource: item.deletionSource || `Week ${parseInt(item.week.replace('Week', '') || 1)}, ${item.day}`
+            }));
+            state.headerPhotoUrl = data.plannerHeaderPhoto || state.headerPhotoUrl;
+            state.startDate = new Date(data.plannerStartDate);
+            state.totalWeekdays = parseInt(data.plannerTotalWeekdays);
+            state.countedDays = data.plannerCountedDays;
+            state.dailyTimeRecords = new Map(Object.entries(data.dailyTimeRecords || {}));
+            state.allowPastActions = data.allowPastActions ?? false;
+            state.markPendingOnDayComplete = data.markPendingOnDayComplete ?? false;
+            state.aiAssistantMessages = data.aiAssistantMessages || [
+                { role: 'assistant', content: 'Hello! I\'m your AI Study Assistant. How can I help you with your SSC CGL preparation today?' }
+            ];
+            utils.storage.save('plannerTasks', state.tasks);
+            utils.storage.save('plannerDeletedTasks', state.deletedTasks);
+            utils.storage.save('plannerHeaderPhoto', state.headerPhotoUrl);
+            utils.storage.save('plannerStartDate', state.startDate.toISOString());
+            utils.storage.save('plannerTotalWeekdays', state.totalWeekdays);
+            utils.storage.save('plannerCountedDays', state.countedDays);
+            utils.storage.save('dailyTimeRecords', Object.fromEntries(state.dailyTimeRecords));
+            utils.storage.save('allowPastActions', state.allowPastActions);
+            utils.storage.save('markPendingOnDayComplete', state.markPendingOnDayComplete);
+            utils.storage.save('aiAssistantMessages', state.aiAssistantMessages);
+            DOM.headerPhoto.src = state.headerPhotoUrl;
+            DOM.headerPhotoInput.value = state.headerPhotoUrl;
+            DOM.startDateInput.value = state.startDate.toISOString().split('T')[0];
+            DOM.totalDaysInput.value = state.totalWeekdays;
+            DOM.dayCheckboxes.forEach(cb => cb.checked = state.countedDays.includes(cb.value));
+            DOM.allowPastActions.checked = state.allowPastActions;
+            DOM.markPendingOnDayComplete.checked = state.markPendingOnDayComplete;
+            initializeApp();
+            utils.showToast('Data imported successfully', 'success');
+        } catch (error) {
+            console.error('Error importing data:', error);
+            utils.showToast('Failed to import data: ' + error.message, 'error');
+        }
+    },
+    debounce: (func, wait) => {
+        let timeout;
+        return (...args) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func(...args), wait);
+        };
+    },
+    isNextDay: (date1, date2) => {
+        const nextDay = new Date(date1);
+        nextDay.setDate(nextDay.getDate() + 1);
+        
+        return (
+            date2.getDate() === nextDay.getDate() &&
+            date2.getMonth() === nextDay.getMonth() &&
+            date2.getFullYear() === nextDay.getFullYear()
+        );
+    }
+};
+
+// Initialize Tasks
+function initializeTasks() {
+    try {
+        const totalWeeks = Math.ceil(state.totalWeekdays / state.countedDays.length);
+        const existingTasks = state.tasks || {};
+        const tasks = {};
+        for (let i = 1; i <= totalWeeks; i++) {
+            const weekKey = `Week${i}`;
+            tasks[weekKey] = {};
+            state.baseDays.forEach(day => {
+                tasks[weekKey][day] = existingTasks[weekKey]?.[day] || [];
+            });
+        }
+        Object.keys(existingTasks).forEach(weekKey => {
+            const weekNum = parseInt(weekKey.replace('Week', ''));
+            if (weekNum <= totalWeeks) {
+                Object.keys(existingTasks[weekKey]).forEach(day => {
+                    if (state.baseDays.includes(day)) {
+                        tasks[weekKey][day] = existingTasks[weekKey][day];
+                    }
+                });
+            }
+        });
+        state.tasks = tasks;
+        utils.storage.save('plannerTasks', state.tasks);
+    } catch (error) {
+        console.error('Error initializing tasks:', error);
+        utils.showToast('Failed to initialize tasks', 'error');
+    }
+}
+
+// Save Settings
+function saveSettings() {
+    try {
+        const totalDays = parseInt(DOM.totalDaysInput.value);
+        const startDate = new Date(DOM.startDateInput.value);
+        const countedDays = Array.from(DOM.dayCheckboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+        
+        if (!countedDays.length) {
+            utils.showToast('At least one day must be selected', 'error');
+            return;
+        }
+        if (isNaN(totalDays) || totalDays < 1) {
+            utils.showToast('Total days must be a positive number', 'error');
+            return;
+        }
+        if (isNaN(startDate.getTime())) {
+            utils.showToast('Invalid start date', 'error');
+            return;
+        }
+
+        // Handle file upload
+        const fileInput = DOM.headerPhotoInput;
+        if (fileInput.files && fileInput.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                state.headerPhotoUrl = e.target.result;
+                DOM.headerPhoto.src = state.headerPhotoUrl;
+                utils.storage.save('plannerHeaderPhoto', state.headerPhotoUrl);
+                completeSettingsSave(totalDays, startDate, countedDays);
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+        } else {
+            completeSettingsSave(totalDays, startDate, countedDays);
+        }
+    } catch (error) {
+        console.error('Error saving settings:', error);
+        utils.showToast('Failed to save settings', 'error');
+    }
+}
+
+function completeSettingsSave(totalDays, startDate, countedDays) {
+    state.totalWeekdays = totalDays;
+    state.startDate = startDate;
+    state.countedDays = countedDays;
+    state.allowPastActions = DOM.allowPastActions.checked;
+    state.markPendingOnDayComplete = DOM.markPendingOnDayComplete.checked;
+    
+    utils.storage.save('plannerStartDate', state.startDate.toISOString());
+    utils.storage.save('plannerTotalWeekdays', totalDays);
+    utils.storage.save('plannerCountedDays', countedDays);
+    utils.storage.save('allowPastActions', state.allowPastActions);
+    utils.storage.save('markPendingOnDayComplete', state.markPendingOnDayComplete);
+    
+    toggleEditForm();
+    calculateCurrentWeekAndDay();
+    updateWeeks();
+    updateDays();
+    initializeTasks();
+    updateTasks();
+    updateDateDisplay();
+    utils.showToast('Settings saved successfully', 'success');
+}
+
+// Load Data
+function loadData() {
+    try {
+        const savedTasks = utils.storage.load('plannerTasks');
+        const savedDeletedTasks = utils.storage.load('plannerDeletedTasks');
+        const savedHeaderPhoto = utils.storage.load('plannerHeaderPhoto');
+        const savedStartDate = utils.storage.load('plannerStartDate');
+        const savedTotalWeekdays = utils.storage.load('plannerTotalWeekdays');
+        const savedCountedDays = utils.storage.load('plannerCountedDays');
+        const savedDailyTimeRecords = utils.storage.load('dailyTimeRecords');
+        const savedAllowPastActions = utils.storage.load('allowPastActions');
+        const savedMarkPendingOnDayComplete = utils.storage.load('markPendingOnDayComplete');
+        const savedAIMessages = utils.storage.load('aiAssistantMessages');
+        
+        if (savedTasks) state.tasks = savedTasks;
+        state.deletedTasks = savedDeletedTasks ? savedDeletedTasks.map(item => ({
+            ...item,
+            deletionSource: item.deletionSource || `Week ${parseInt(item.week.replace('Week', '')) || 1}, ${item.day}`
+        })) : [];
+        
+        if (savedHeaderPhoto) {
+            state.headerPhotoUrl = savedHeaderPhoto;
+            DOM.headerPhoto.src = savedHeaderPhoto;
+        }
+        
+        if (savedStartDate) {
+            state.startDate = new Date(savedStartDate);
+            DOM.startDateInput.value = state.startDate.toISOString().split('T')[0];
+        }
+        
+        if (savedTotalWeekdays) {
+            state.totalWeekdays = parseInt(savedTotalWeekdays);
+            DOM.totalDaysInput.value = state.totalWeekdays;
+        }
+        
+        if (savedCountedDays) {
+            state.countedDays = savedCountedDays;
+            DOM.dayCheckboxes.forEach(cb => cb.checked = savedCountedDays.includes(cb.value));
+        }
+        
+        if (savedDailyTimeRecords) {
+            state.dailyTimeRecords = new Map(Object.entries(savedDailyTimeRecords || {}));
+        }
+        
+        if (savedAllowPastActions !== null) {
+            state.allowPastActions = savedAllowPastActions;
+            DOM.allowPastActions.checked = savedAllowPastActions;
+        }
+        
+        if (savedMarkPendingOnDayComplete !== null) {
+            state.markPendingOnDayComplete = savedMarkPendingOnDayComplete;
+            DOM.markPendingOnDayComplete.checked = savedMarkPendingOnDayComplete;
+        }
+        
+        if (savedAIMessages) {
+            state.aiAssistantMessages = savedAIMessages;
+        }
+        
+        initializeTasks();
+    } catch (error) {
+        console.error('Error loading data:', error);
+        utils.showToast('Failed to load data', 'error');
+    }
+}
+
+// Calculate Current Week and Day
+function calculateCurrentWeekAndDay() {
+    try {
+        const today = new Date();
+        const daysSinceStart = utils.countWeekdaysBetween(state.startDate, today);
+        state.currentWeek = Math.min(
+            Math.max(1, Math.ceil(daysSinceStart / state.countedDays.length)),
+            Math.ceil(state.totalWeekdays / state.countedDays.length)
+        );
+        const currentDate = new Date(state.startDate);
+        currentDate.setDate(currentDate.getDate() + (state.currentWeek - 1) * 7);
+        state.currentDay = utils.getDayOfWeek(today);
+    } catch (error) {
+        console.error('Error calculating current week and day:', error);
+        utils.showToast('Failed to calculate current week and day', 'error');
+    }
+}
+
+// Update Date Display
+function updateDateDisplay() {
+    try {
+        const date = utils.calculateDate(state.currentWeek, state.currentDay);
+        DOM.currentDate.textContent = date.toLocaleString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        
+        // Calculate total counted days up to the selected date
+        const totalCountedDays = utils.countWeekdaysBetween(state.startDate, date);
+        DOM.currentDayCount.textContent = `Day ${totalCountedDays}/${state.totalWeekdays}`;
+    } catch (error) {
+        console.error('Error updating date display:', error);
+        utils.showToast('Failed to update date display', 'error');
+    }
+}
+
+// Update Time Display
+function updateTimeDisplay() {
+    try {
+        const now = new Date();
+        DOM.currentTime.textContent = now.toLocaleTimeString('en-US', { hour12: true, timeZone: 'Asia/Kolkata' }) + ' IST';
+        
+        // Check for day completion at midnight
+        if (now.getHours() === 0 && now.getMinutes() === 0) {
+            setTimeout(checkDayCompletion, 1000); // Small delay to ensure date change
+        }
+        
+        setTimeout(updateTimeDisplay, 1000);
+    } catch (error) {
+        console.error('Error updating time display:', error);
+        utils.showToast('Failed to update time display', 'error');
+    }
+}
+
+// Update Weeks
+function updateWeeks() {
+    try {
+        const totalWeeks = Math.ceil(state.totalWeekdays / state.countedDays.length);
+        DOM.weekSelect.innerHTML = Array.from({ length: totalWeeks }, (_, i) => 
+            `<option value="${i + 1}" ${i + 1 === state.currentWeek ? 'selected' : ''}>Week ${i + 1}</option>`
+        ).join('');
+    } catch (error) {
+        console.error('Error updating weeks:', error);
+        utils.showToast('Failed to update weeks', 'error');
+    }
+}
+
+// Update Days
+function updateDays() {
+    try {
+        const currentWeek = parseInt(DOM.weekSelect.value);
+        const totalWeeks = Math.ceil(state.totalWeekdays / state.countedDays.length);
+        const currentDayIndex = state.baseDays.indexOf(state.currentDay);
+
+        DOM.dayButtons.innerHTML = `
+            <div class="flex items-center gap-2">
+                <!-- Always show left arrow -->
+                <button onclick="navigateDay(-1)" 
+                    class="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300 transition duration-300"
+                    aria-label="Previous day">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                
+                ${state.baseDays.map(day => `
+                    <button 
+                        onclick="updateDay('${day}')" 
+                        class="px-4 py-2 rounded-lg ${dayColors[day].bg} ${dayColors[day].hoverBg} transition duration-300 
+                        ${state.currentDay === day ? 'ring-2 ring-offset-2 ring-indigo-500 scale-105' : ''}" 
+                        aria-label="Select ${day}">
+                        ${day}
+                    </button>
+                `).join('')}
+                
+                <!-- Always show right arrow -->
+                <button onclick="navigateDay(1)" 
+                    class="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300 transition duration-300"
+                    aria-label="Next day">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        `;
+    } catch (error) {
+        console.error('Error updating days:', error);
+        utils.showToast('Failed to update days', 'error');
+    }
+}
+
+function navigateDay(direction) {
+    const currentDayIndex = state.baseDays.indexOf(state.currentDay);
+    const currentWeek = parseInt(DOM.weekSelect.value);
+    const totalWeeks = Math.ceil(state.totalWeekdays / state.countedDays.length);
+
+    let newDayIndex = currentDayIndex + direction;
+    let newWeek = currentWeek;
+
+    // Handle week transitions
+    if (newDayIndex < 0) {
+        // Move to previous week's Sunday
+        if (currentWeek > 1) {
+            newWeek = currentWeek - 1;
+            newDayIndex = state.baseDays.length - 1; // Last day (Sunday)
+        } else {
+            return; // Can't go before week 1 Sunday
+        }
+    } else if (newDayIndex >= state.baseDays.length) {
+        // Move to next week's Monday
+        if (currentWeek < totalWeeks) {
+            newWeek = currentWeek + 1;
+            newDayIndex = 0; // First day (Monday)
+        } else {
+            return; // Can't go beyond last week
+        }
+    }
+
+    // Update week if needed
+    if (newWeek !== currentWeek) {
+        DOM.weekSelect.value = newWeek;
+        state.currentWeek = newWeek;
+    }
+
+    // Update day
+    state.currentDay = state.baseDays[newDayIndex];
+    updateDays();
+    updateTasks();
+    updateDateDisplay();
+}
+
+// Update Week
+function updateWeek() {
+    try {
+        state.currentWeek = parseInt(DOM.weekSelect.value);
+        updateTasks();
+        updateDateDisplay();
+    } catch (error) {
+        console.error('Error updating week:', error);
+        utils.showToast('Failed to update week', 'error');
+    }
+}
+
+// Update Day
+function updateDay(day) {
+    try {
+        state.currentDay = day;
+        updateDays();
+        updateTasks();
+        updateDateDisplay();
+    } catch (error) {
+        console.error('Error updating day:', error);
+        utils.showToast('Failed to update day', 'error');
+    }
+}
+
+// Toggle Theme
+function toggleTheme() {
+    try {
+        const isDark = document.documentElement.dataset.theme === 'dark';
+        document.documentElement.dataset.theme = isDark ? 'light' : 'dark';
+        if (state.chart) updateProgressChart();
+        if (state.subjectChart) updateSubjectProgressChart();
+        if (state.detailedSubjectChart) updateDetailedSubjectProgressChart();
+        if (state.taskTimeSpentChart) updateTaskTimeSpentChart();
+    } catch (error) {
+        console.error('Error toggling theme:', error);
+        utils.showToast('Failed to toggle theme', 'error');
+    }
+}
+
+// Toggle Edit Form
+function toggleEditForm() {
+    try {
+        DOM.editForm.classList.toggle('hidden');
+    } catch (error) {
+        console.error('Error toggling edit form:', error);
+        utils.showToast('Failed to toggle settings form', 'error');
+    }
+}
+
+// Toggle Add Task Form
+function toggleAddTaskForm() {
+    try {
+        state.isAdd = true;
+        DOM.addTaskForm.classList.toggle('hidden');
+        DOM.taskFormTitle.textContent = 'Add New Task';
+        DOM.taskSubject.value = '';
+        DOM.taskSubTopic.value = '';
+        DOM.taskSubTopic.disabled = true;
+        DOM.taskType.value = '';
+        DOM.taskTopic.value = '';
+        DOM.taskDetails.value = '';
+        DOM.taskFormSubmit.textContent = 'Submit';
+        updateSubTopicOptions();
+    } catch (error) {
+        console.error('Error toggling add task form:', error);
+        utils.showToast('Failed to toggle add task form', 'error');
+    }
+}
+
+function toggleDaySelectors() {
+    try {
+        const showWeekSelector = DOM.progressTimeframe.value === 'weekly' || DOM.progressTimeframe.value === 'daily';
+        DOM.progressWeek.classList.toggle('hidden', !showWeekSelector);
+        DOM.subjectProgressWeek.classList.toggle('hidden', !showWeekSelector);
+        DOM.taskTimeSpentWeek.classList.toggle('hidden', !showWeekSelector);
+    } catch (error) {
+        console.error('Error toggling day selectors:', error);
+        utils.showToast('Failed to toggle day selectors', 'error');
+    }
+}
+
+// Update Sub-Topic Options
+function updateSubTopicOptions() {
+    try {
+        const subject = DOM.taskSubject.value;
+        DOM.taskSubTopic.innerHTML = '<option value="" disabled selected>Select Sub-Topic</option>';
+        DOM.taskSubTopic.disabled = !subject;
+        if (subject && subTopicMap[subject]) {
+            DOM.taskSubTopic.innerHTML += subTopicMap[subject].map(subTopic => 
+                `<option value="${subTopic}">${subTopic}</option>`
+            ).join('');
+        }
+    } catch (error) {
+        console.error('Error updating sub-topic options:', error);
+        utils.showToast('Failed to update sub-topic options', 'error');
+    }
+}
+
+// Submit Task Form
+function submitTaskForm() {
+    try {
+        const subject = DOM.taskSubject.value;
+        const subTopic = DOM.taskSubTopic.value;
+        const taskType = DOM.taskType.value;
+        const topic = DOM.taskTopic.value.trim();
+        const details = DOM.taskDetails.value.trim() || 'No details provided';
+        if (!subject || !subTopic || !taskType || !topic) {
+            utils.showToast('Please fill all required fields', 'error');
+            return;
+        }
+        const week = `Week${state.currentWeek}`;
+        if (!state.tasks[week]) {
+            state.tasks[week] = Object.fromEntries(state.baseDays.map(d => [d, []]));
+        }
+        const subjectColor = ['Quantitative Aptitude', 'English'].includes(subject) ? 'text-green-600' : 'text-red-600';
+        if (state.isAdd) {
+            state.tasks[week][state.currentDay].push({
+                subject,
+                subTopic,
+                taskType,
+                topic,
+                details,
+                completed: null,
+                timerStatus: 'stopped',
+                timerStart: null,
+                accumulatedTime: 0,
+                subjectColor
+            });
+            utils.showToast('Task added successfully', 'success');
+        } else {
+            const { week, day, index } = state.editingTask;
+            state.tasks[week][day][index] = {
+                ...state.tasks[week][day][index],
+                subject,
+                subTopic,
+                taskType,
+                topic,
+                details,
+                subjectColor
+            };
+            utils.showToast('Task updated successfully', 'success');
+        }
+        utils.storage.save('plannerTasks', state.tasks);
+        toggleAddTaskForm();
+        updateTasks();
+    } catch (error) {
+        console.error('Error submitting task form:', error);
+        utils.showToast('Failed to submit task form', 'error');
+    }
+}
+
+// Cancel Task Form
+function cancelTaskForm() {
+    try {
+        DOM.addTaskForm.classList.add('hidden');
+        state.editingTask = null;
+        state.isAdd = true;
+    } catch (error) {
+        console.error('Error cancelling task form:', error);
+        utils.showToast('Failed to cancel task form', 'error');
+    }
+}
+
+// Edit Task
+function editTask(week, day, index) {
+    try {
+        const task = state.tasks[week][day][index];
+        state.isAdd = false;
+        state.editingTask = { week, day, index };
+        DOM.taskFormTitle.textContent = 'Edit Task';
+        DOM.taskSubject.value = task.subject;
+        updateSubTopicOptions();
+        DOM.taskSubTopic.value = task.subTopic || '';
+        DOM.taskSubTopic.disabled = false;
+        DOM.taskType.value = task.taskType || '';
+        DOM.taskTopic.value = task.topic;
+        DOM.taskDetails.value = task.details;
+        DOM.taskFormSubmit.textContent = 'Update';
+        DOM.addTaskForm.classList.remove('hidden');
+    } catch (error) {
+        console.error('Error editing task:', error);
+        utils.showToast('Failed to edit task', 'error');
+    }
+}
+
+// Handle Task Card Double Tap
+function handleTaskCardDoubleTap(week, day, index) {
+    try {
+        const now = Date.now();
+        const doubleTapTime = 300; // milliseconds
+        if (state.lastTap && (now - state.lastTap) < doubleTapTime) {
+            editTask(week, day, index);
+            state.lastTap = 0;
+        } else {
+            state.lastTap = now;
+        }
+    } catch (error) {
+        console.error('Error handling task card double tap:', error);
+        utils.showToast('Failed to handle double tap', 'error');
+    }
+}
+
+// Show Task Details
+function showTaskDetails(week, day, index) {
+    try {
+        const task = state.tasks[week][day][index];
+        const taskDate = utils.calculateDate(parseInt(week.replace('Week', '')), day);
+        DOM.taskDetailsContent.innerHTML = `
+            <p><strong>Subject:</strong> ${task.subject}</p>
+            <p><strong>Sub-Topic:</strong> ${task.subTopic || 'None'}</p>
+            <p><strong>Task Type:</strong> ${task.taskType || 'None'}</p>
+            <p><strong>Description:</strong> ${task.topic}</p>
+            <p><strong>Details:</strong> ${task.details}</p>
+            <p><strong>Date:</strong> ${taskDate.toLocaleString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            <p><strong>Status:</strong> ${task.completed === true ? 'Completed' : task.completed === false ? 'Pending' : 'Not Started'}</p>
+            <p><strong>Time Spent:</strong> ${utils.formatTime(getTaskTimeSpent(task))}</p>
+        `;
+        DOM.taskDetailsModal.classList.remove('hidden');
+    } catch (error) {
+        console.error('Error showing task details:', error);
+        utils.showToast('Failed to show task details', 'error');
+    }
+}
+
+// Close Task Details Modal
+function closeTaskDetailsModal() {
+    try {
+        DOM.taskDetailsModal.classList.add('hidden');
+    } catch (error) {
+        console.error('Error closing task details modal:', error);
+        utils.showToast('Failed to close task details modal', 'error');
+    }
+}
+
+// Get Task Time Spent
+function getTaskTimeSpent(task) {
+    try {
+        let timeSpent = task.accumulatedTime || 0;
+        if (task.timerStatus === 'running' && task.timerStart) {
+            timeSpent += Math.floor((Date.now() - task.timerStart) / 1000);
+        }
+        return timeSpent;
+    } catch (error) {
+        console.error('Error calculating task time spent:', error);
+        return 0;
+    }
+}
+
+// Stop All Running Timers
+function stopAllRunningTimers() {
+    try {
+        state.timers.active.forEach(taskId => {
+            const [week, day, index] = taskId.split('-');
+            const task = state.tasks[week][day][parseInt(index)];
+            if (task.timerStatus === 'running') {
+                task.accumulatedTime += Math.floor((Date.now() - task.timerStart) / 1000);
+                task.timerStatus = 'stopped';
+                task.timerStart = null;
+                const dateKey = utils.getDateKey(utils.calculateDate(parseInt(week.replace('Week', '')), day));
+                const currentTotal = state.dailyTimeRecords.get(dateKey) || 0;
+                state.dailyTimeRecords.set(dateKey, currentTotal + task.accumulatedTime);
+            }
+            state.timers.active.delete(taskId);
+        });
+        utils.storage.save('plannerTasks', state.tasks);
+        utils.storage.save('dailyTimeRecords', Object.fromEntries(state.dailyTimeRecords));
+    } catch (error) {
+        console.error('Error stopping all timers:', error);
+        utils.showToast('Failed to stop running timers', 'error');
+    }
+}
+
+// Start Task Timer
+function startTaskTimer(week, day, index) {
+    try {
+        if (utils.isPastDate(week, day) && !state.allowPastActions) {
+            utils.showToast('Cannot start timer for past dates. Enable in settings.', 'error');
+            return;
+        }
+        const task = state.tasks[week][day][index];
+        if (state.timers.active.has(`${week}-${day}-${index}`)) return;
+        stopAllRunningTimers();
+        task.timerStatus = 'running';
+        task.timerStart = Date.now();
+        state.timers.active.add(`${week}-${day}-${index}`);
+        updateTasks();
+        utils.storage.save('plannerTasks', state.tasks);
+        startTimerInterval();
+    } catch (error) {
+        console.error('Error starting task timer:', error);
+        utils.showToast('Failed to start timer', 'error');
+    }
+}
+
+// Pause Task Timer
+function pauseTaskTimer(week, day, index) {
+    try {
+        const task = state.tasks[week][day][index];
+        if (task.timerStatus !== 'running') return;
+        task.timerStatus = 'paused';
+        task.accumulatedTime += Math.floor((Date.now() - task.timerStart) / 1000);
+        task.timerStart = null;
+        state.timers.active.delete(`${week}-${day}-${index}`);
+        updateTasks();
+        utils.storage.save('plannerTasks', state.tasks);
+    } catch (error) {
+        console.error('Error pausing task timer:', error);
+        utils.showToast('Failed to pause timer', 'error');
+    }
+}
+
+// Stop Task Timer
+function stopTaskTimer(week, day, index) {
+    try {
+        const task = state.tasks[week][day][index];
+        if (task.timerStatus === 'running') {
+            task.accumulatedTime += Math.floor((Date.now() - task.timerStart) / 1000);
+        }
+        task.timerStatus = 'stopped';
+        task.timerStart = null;
+        state.timers.active.delete(`${week}-${day}-${index}`);
+        const dateKey = utils.getDateKey(utils.calculateDate(parseInt(week.replace('Week', '')), day));
+        const currentTotal = state.dailyTimeRecords.get(dateKey) || 0;
+        state.dailyTimeRecords.set(dateKey, currentTotal + task.accumulatedTime);
+        utils.storage.save('plannerTasks', state.tasks);
+        utils.storage.save('dailyTimeRecords', Object.fromEntries(state.dailyTimeRecords));
+        updateTasks();
+    } catch (error) {
+        console.error('Error stopping task timer:', error);
+        utils.showToast('Failed to stop timer', 'error');
+    }
+}
+
+// Start Timer Interval
+function startTimerInterval() {
+    try {
+        if (state.timerInterval) {
+            clearInterval(state.timerInterval);
+            state.timerInterval = null;
+        }
+        if (state.timers.active.size > 0) {
+            state.timerInterval = setInterval(() => {
+                updateTasks();
+            }, 1000);
+        }
+    } catch (error) {
+        console.error('Error starting timer interval:', error);
+        utils.showToast('Failed to update timer', 'error');
+    }
+}
+
+// Update Daily Summary
+function updateDailySummary() {
+    const week = `Week${state.currentWeek}`;
+    const tasks = state.tasks[week]?.[state.currentDay] || [];
+    const date = utils.calculateDate(state.currentWeek, state.currentDay);
+    const dateKey = utils.getDateKey(date);
+    
+    // Always calculate total time from task timers for real-time updates
+    let totalTime = tasks.reduce((sum, task) => sum + (getTaskTimeSpent(task) || 0), 0);
+    
+    // Use stored value from dailyTimeRecords only if no timers are running and manual edit exists
+    const hasRunningTimers = tasks.some(task => task.timerStatus === 'running');
+    if (!hasRunningTimers && state.dailyTimeRecords[dateKey]?.manualEdit) {
+        totalTime = state.dailyTimeRecords[dateKey].time;
+    } else if (!hasRunningTimers && state.dailyTimeRecords[dateKey]?.time !== undefined) {
+        totalTime = state.dailyTimeRecords[dateKey].time;
+    } else {
+        // Update dailyTimeRecords with calculated time if no manual edit and no timers running
+        state.dailyTimeRecords[dateKey] = {
+            time: totalTime,
+            manualEdit: false
+        };
+        utils.storage.save('dailyTimeRecords', Object.fromEntries(state.dailyTimeRecords)); // Ensure save on update
+    }
+    
+    DOM.dailyTimeTotal.textContent = utils.formatTime(totalTime || 0);
+    
+    const completed = tasks.filter(task => task.completed === true).length;
+    const pending = tasks.filter(task => task.completed === false).length;
+    const total = tasks.length;
+    
+    DOM.completedTasksCount.textContent = completed;
+    DOM.pendingTasksCount.textContent = pending;
+    DOM.totalTasksCount.textContent = total;
+}
+
+// Mark Task Completed
+function markTaskCompleted(week, day, index, status) {
+    try {
+        if (utils.isPastDate(week, day) && !state.allowPastActions) {
+            utils.showToast('Cannot modify past tasks. Enable in settings.', 'error');
+            return;
+        }
+
+        const task = state.tasks[week][day][index];
+        task.completed = status;
+        
+        if (status === true) {
+            stopTaskTimer(week, day, index);
+            utils.triggerConfetti();
+            
+            // Check if this is the first task being marked complete on the next day
+            const today = new Date();
+            const taskDate = utils.calculateDate(parseInt(week.replace('Week', '')), day);
+            const isNextDay = utils.isNextDay(taskDate, today);
+            
+            if (isNextDay && state.markPendingOnDayComplete) {
+                const dayTasks = state.tasks[week][day];
+                const notStartedTasks = dayTasks.filter(t => t.completed === null);
+                
+                // Only show if there are not started tasks and this is the first completion
+                const completedTasks = dayTasks.filter(t => t.completed === true).length;
+                if (notStartedTasks.length > 0 && completedTasks === 1) {
+                    showDayCompleteNotification(week, day, notStartedTasks.length);
+                }
+            }
+        }
+        
+        utils.storage.save('plannerTasks', state.tasks);
+        updateTasks();
+        
+        if (status === true) {
+            utils.showToast('Task marked as completed', 'success');
+        } else if (status === false) {
+            utils.showToast('Task marked as pending', 'success');
+        } else {
+            utils.showToast('Task marked as not started', 'success');
+        }
+    } catch (error) {
+        console.error('Error marking task completed:', error);
+        utils.showToast('Failed to update task status', 'error');
+    }
+}
+
+// Show Day Complete Notification
+function showDayCompleteNotification(week, day, count) {
+    if (state.showDayCompleteNotification) return;
+    
+    state.showDayCompleteNotification = true;
+    state.pendingDayComplete = {week, day};
+    
+    document.getElementById('pendingTasksCount').textContent = count;
+    document.getElementById('dayCompleteNotification').classList.remove('hidden');
+}
+
+function dismissDayCompleteNotification() {
+    state.showDayCompleteNotification = false;
+    document.getElementById('dayCompleteNotification').classList.add('hidden');
+}
+
+function approveMarkPending() {
+    if (!state.pendingDayComplete) return;
+    
+    const {week, day} = state.pendingDayComplete;
+    const tasks = state.tasks[week]?.[day] || [];
+    
+    tasks.forEach(task => {
+        if (task.completed === null) {
+            task.completed = false; // Mark as pending
+        }
+    });
+    
+    utils.storage.save('plannerTasks', state.tasks);
+    updateTasks();
+    dismissDayCompleteNotification();
+    utils.showToast('Not started tasks marked as pending', 'success');
+}
+
+// Show Delete Confirmation
+function showDeleteConfirmation(week, day, index) {
+    try {
+        state.pendingDeleteModal = { week, day, index };
+        DOM.deleteConfirmModal.classList.remove('hidden');
+    } catch (error) {
+        console.error('Error showing delete confirmation:', error);
+        utils.showToast('Failed to show delete confirmation', 'error');
+    }
+}
+
+// Confirm Delete
+function confirmDelete() {
+    try {
+        const { week, day, index } = state.pendingDeleteModal;
+        const task = state.tasks[week][day][index];
+        stopTaskTimer(week, day, index);
+        state.deletedTasks.push({
+            task,
+            week,
+            day,
+            timestamp: Date.now(),
+            deletionSource: `Week ${parseInt(week.replace('Week', ''))}, ${day}`
+        });
+        state.tasks[week][day].splice(index, 1);
+        utils.storage.save('plannerTasks', state.tasks);
+        utils.storage.save('plannerDeletedTasks', state.deletedTasks);
+        updateTasks();
+        updateDeletedTasksList();
+        cancelDelete();
+        utils.showToast('Task moved to recycle bin', 'success');
+    } catch (error) {
+        console.error('Error confirming delete:', error);
+        utils.showToast('Failed to delete task', 'error');
+    }
+}
+
+// Cancel Delete
+function cancelDelete() {
+    try {
+        DOM.deleteConfirmModal.classList.add('hidden');
+        state.pendingDeleteModal = null;
+    } catch (error) {
+        console.error('Error cancelling delete:', error);
+        utils.showToast('Failed to cancel deletion', 'error');
+    }
+}
+
+// Update Deleted Tasks List
+function updateDeletedTasksList() {
+    try {
+        const now = Date.now();
+        state.deletedTasks = state.deletedTasks.filter(item => now - item.timestamp < 30 * 24 * 60 * 60 * 1000);
+        DOM.clearAllButton.disabled = !state.deletedTasks.length;
+        DOM.deletedTasksList.innerHTML = state.deletedTasks.length ? state.deletedTasks.map((item, index) => `
+            <div class="bg-gray-100 p-4 rounded-lg flex justify-between items-center">
+                <div>
+                    <p class="font-semibold">${item.task.subject} - ${item.task.subTopic || 'None'}</p>
+                    <p class="text-gray-600">${item.task.topic}</p>
+                    <p class="text-gray-500 text-sm">Deleted from: ${item.deletionSource}</p>
+                    <p class="text-gray-500 text-sm">Deleted on: ${new Date(item.timestamp).toLocaleString()}</p>
+                </div>
+                <div class="space-x-2">
+                    <button onclick="restoreTask(${index})" class="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300" aria-label="Restore Task"><i class="fas fa-undo"></i></button>
+                    <button onclick="permanentlyDeleteTask(${index})" class="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-300" aria-label="Permanently Delete Task"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            </div>
+        `).join('') : '<p class="text-gray-600 text-center">Recycle bin is empty</p>';
+        utils.storage.save('plannerDeletedTasks', state.deletedTasks);
+    } catch (error) {
+        console.error('Error updating deleted tasks list:', error);
+        utils.showToast('Failed to update recycle bin', 'error');
+    }
+}
+
+// Restore Task
+function restoreTask(index) {
+    try {
+        const { task, week, day } = state.deletedTasks[index];
+        if (!state.tasks[week]) {
+            state.tasks[week] = Object.fromEntries(state.baseDays.map(d => [d, []]));
+        }
+        state.tasks[week][day].push(task);
+        state.deletedTasks.splice(index, 1);
+        utils.storage.save('plannerTasks', state.tasks);
+        utils.storage.save('plannerDeletedTasks', state.deletedTasks);
+        updateTasks();
+        updateDeletedTasksList();
+        utils.showToast('Task restored successfully', 'success');
+    } catch (error) {
+        console.error('Error restoring task:', error);
+        utils.showToast('Failed to restore task', 'error');
+    }
+}
+
+// Permanently Delete Task
+function permanentlyDeleteTask(index) {
+    try {
+        state.deletedTasks.splice(index, 1);
+        utils.storage.save('plannerDeletedTasks', state.deletedTasks);
+        updateDeletedTasksList();
+        utils.showToast('Task permanently deleted', 'success');
+    } catch (error) {
+        console.error('Error permanently deleting task:', error);
+        utils.showToast('Failed to permanently delete task', 'error');
+    }
+}
+
+// Clear All Deleted Tasks
+function clearAllDeletedTasks() {
+    try {
+        state.deletedTasks = [];
+        utils.storage.save('plannerDeletedTasks', state.deletedTasks);
+        updateDeletedTasksList();
+        utils.showToast('Recycle bin cleared', 'success');
+    } catch (error) {
+        console.error('Error clearing deleted tasks:', error);
+        utils.showToast('Failed to clear recycle bin', 'error');
+    }
+}
+
+// Drag and Drop Handlers
+function handleDragStart(event, week, day, index) {
+    try {
+        event.dataTransfer.setData('text/plain', `${week}-${day}-${index}`);
+        event.currentTarget.classList.add('dragging');
+    } catch (error) {
+        console.error('Error handling drag start:', error);
+        utils.showToast('Failed to start drag', 'error');
+    }
+}
+
+function handleDragOver(event) {
+    event.preventDefault();
+    event.currentTarget.classList.add('drag-over');
+}
+
+function handleDragLeave(event) {
+    event.currentTarget.classList.remove('drag-over');
+}
+
+function handleDragEnd(event) {
+    event.currentTarget.classList.remove('dragging', 'drag-over');
+}
+
+function handleDrop(event, week, day, targetIndex) {
+    try {
+        event.preventDefault();
+        event.currentTarget.classList.remove('drag-over');
+        
+        const [sourceWeek, sourceDay, sourceIndex] = event.dataTransfer.getData('text/plain').split('-');
+        if (sourceWeek === week && sourceDay === day) {
+            const sourceIdx = parseInt(sourceIndex);
+            const targetIdx = parseInt(targetIndex);
+            
+            if (sourceIdx !== targetIdx) {
+                const tasks = state.tasks[week][day];
+                const [movedTask] = tasks.splice(sourceIdx, 1);
+                tasks.splice(targetIdx, 0, movedTask);
+                utils.storage.save('plannerTasks', state.tasks);
+                updateTasks();
+            }
+        }
+    } catch (error) {
+        console.error('Error handling drop:', error);
+        utils.showToast('Failed to reorder tasks', 'error');
+    }
+}
+
+
+// Modify the updateTasks function to respect current filter
+function updateTasks() {
+    try {
+        const week = `Week${state.currentWeek}`;
+        if (!state.tasks[week]) {
+            state.tasks[week] = Object.fromEntries(state.baseDays.map(d => [d, []]));
+            utils.storage.save('plannerTasks', state.tasks);
+        }
+        const allTasks = state.tasks[week][state.currentDay] || [];
+        const searchQuery = DOM.taskSearch.value.trim().toLowerCase();
+        
+        // First apply status filter if active
+   let filteredTasks = allTasks;
+    if (currentFilter) {
+        switch(currentFilter) {
+            case 'completed':
+                filteredTasks = filteredTasks.filter(task => task.completed === true);
+                break;
+            case 'pending':
+                filteredTasks = filteredTasks.filter(task => task.completed === false);
+                break;
+            case 'notStarted':
+                // Check for both null and undefined
+                filteredTasks = filteredTasks.filter(task => task.completed === null || task.completed === undefined);
+                break;
+        }
+    }
+        
+        // Then apply search filter
+        if (searchQuery) {
+            filteredTasks = filteredTasks.filter(task => 
+                task.subject.toLowerCase().includes(searchQuery) || 
+                task.subTopic.toLowerCase().includes(searchQuery) || 
+                task.topic.toLowerCase().includes(searchQuery) ||
+                task.details.toLowerCase().includes(searchQuery)
+            );
+        }
+        
+        // Sort tasks (running first, then pending, then completed last)
+        filteredTasks = filteredTasks.sort((a, b) => {
+            if (a.timerStatus === 'running' && b.timerStatus !== 'running') return -1;
+            if (b.timerStatus === 'running' && a.timerStatus !== 'running') return 1;
+            if (a.completed === true && b.completed !== true) return 1;
+            if (b.completed === true && a.completed !== true) return -1;
+            return 0;
+        });
+        
+        // Render the filtered tasks
+        renderTasks(filteredTasks, week);
+        
+        // Update statistics
+        updateTaskStats();
+        updateDailySummary();
+    } catch (error) {
+        console.error('Error updating tasks:', error);
+        utils.showToast('Failed to update tasks', 'error');
+    }
+}
+
+// Duplicate Task to Next Day
+function duplicateTaskToNextDay(week, day, index) {
+    try {
+        const task = state.tasks[week][day][index];
+        const currentWeekNum = parseInt(week.replace('Week', ''));
+        let nextDayIndex = state.baseDays.indexOf(day) + 1;
+        let nextWeekNum = currentWeekNum;
+        let nextDay = state.baseDays[nextDayIndex];
+        if (!nextDay) {
+            nextDayIndex = 0;
+            nextWeekNum++;
+            nextDay = state.baseDays[0];
+        }
+        const totalWeeks = Math.ceil(state.totalWeekdays / state.countedDays.length);
+        if (nextWeekNum > totalWeeks) {
+            utils.showToast('Cannot duplicate to a future week beyond the plan', 'error');
+            return;
+        }
+        const nextWeekKey = `Week${nextWeekNum}`;
+        if (!state.tasks[nextWeekKey]) {
+            state.tasks[nextWeekKey] = Object.fromEntries(state.baseDays.map(d => [d, []]));
+        }
+        state.tasks[nextWeekKey][nextDay].push({
+            ...task,
+            completed: null,
+            timerStatus: 'stopped',
+            timerStart: null,
+            accumulatedTime: 0
+        });
+        utils.storage.save('plannerTasks', state.tasks);
+        utils.showToast('Task duplicated to next day', 'success');
+        updateTasks();
+    } catch (error) {
+        console.error('Error duplicating task:', error);
+        utils.showToast('Failed to duplicate task', 'error');
+    }
+}
+
+// Update Task Stats
+function updateTaskStats() {
+    try {
+        const week = `Week${state.currentWeek}`;
+        const tasks = state.tasks[week]?.[state.currentDay] || [];
+        const total = tasks.length;
+        const completed = tasks.filter(t => t.completed === true).length;
+        const completion = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+        DOM.taskCount.textContent = `Task: ${completed}/${total}`;
+        DOM.totalTasks.textContent = total;
+        DOM.completedTasks.textContent = completed;
+        DOM.completionPercentage.textContent = `${completion}%`;
+        DOM.progressBarFill.style.width = `${completion}%`;
+    } catch (error) {
+        console.error('Error updating task stats:', error);
+        utils.showToast('Failed to update task stats', 'error');
+    }
+}
+
+// Clear Search
+function clearSearch() {
+    try {
+        DOM.taskSearch.value = '';
+        DOM.searchClear.classList.remove('visible');
+        updateTasks();
+    } catch (error) {
+        console.error('Error clearing search:', error);
+        utils.showToast('Failed to clear search', 'error');
+    }
+}
+
+// Debounced Search
+const debouncedSearch = utils.debounce(() => {
+    try {
+        if (DOM.taskSearch.value) {
+            DOM.searchClear.classList.add('visible');
+        } else {
+            DOM.searchClear.classList.remove('visible');
+        }
+        updateTasks();
+    } catch (error) {
+        console.error('Error in debounced search:', error);
+        utils.showToast('Failed to search tasks', 'error');
+    }
+}, 300);
+
+// Close Progress Chart Modal
+function closeProgressChartModal() {
+    try {
+        DOM.progressChartModal.classList.add('hidden');
+    } catch (error) {
+        console.error('Error closing progress chart modal:', error);
+        utils.showToast('Failed to close progress chart modal', 'error');
+    }
+}
+
+// Close Subject Progress Modal
+function closeSubjectProgressModal() {
+    try {
+        DOM.subjectProgressModal.classList.add('hidden');
+    } catch (error) {
+        console.error('Error closing subject progress modal:', error);
+        utils.showToast('Failed to close subject progress modal', 'error');
+    }
+}
+
+// Close Task Time Spent Modal
+function closeTaskTimeSpentModal() {
+    try {
+        DOM.taskTimeSpentModal.classList.add('hidden');
+    } catch (error) {
+        console.error('Error closing task time spent modal:', error);
+        utils.showToast('Failed to close task time spent modal', 'error');
+    }
+}
+
+// Update the chart week selectors function
+function updateChartWeekSelectors() {
+    try {
+        const totalWeeks = Math.ceil(state.totalWeekdays / state.countedDays.length);
+        const options = Array.from({ length: totalWeeks }, (_, i) => 
+            `<option value="${i + 1}" ${i + 1 === state.currentWeek ? 'selected' : ''}>Week ${i + 1}</option>`
+        ).join('');
+        
+        // Update all week selectors in modals
+        DOM.progressWeek.innerHTML = options;
+        DOM.subjectProgressWeek.innerHTML = options;
+        DOM.taskTimeSpentWeek.innerHTML = options;
+    } catch (error) {
+        console.error('Error updating chart week selectors:', error);
+        utils.showToast('Failed to update chart week selectors', 'error');
+    }
+}
+
+// Helper function to count tasks based on filters
+function getTaskCounts(timeframe, labels, filters = {}) {
+    return labels.map(label => {
+        let count = 0;
+        
+        if (timeframe === 'daily') {
+            const day = label;
+            const tasks = state.tasks[`Week${state.currentWeek}`]?.[day] || [];
+            count = tasks.filter(task => {
+                if (filters.subject && task.subject !== filters.subject) return false;
+                if (filters.subTopic && task.subTopic !== filters.subTopic) return false;
+                if (filters.taskType && task.taskType !== filters.taskType) return false;
+                if (filters.completed !== undefined && task.completed !== filters.completed) return false;
+                return true;
+            }).length;
+        } 
+        else if (timeframe === 'weekly') {
+            const weekNum = parseInt(label.replace('Week ', ''));
+            const weekKey = `Week${weekNum}`;
+            count = state.countedDays.reduce((sum, day) => {
+                const tasks = state.tasks[weekKey]?.[day] || [];
+                return sum + tasks.filter(task => {
+                    if (filters.subject && task.subject !== filters.subject) return false;
+                    if (filters.subTopic && task.subTopic !== filters.subTopic) return false;
+                    if (filters.taskType && task.taskType !== filters.taskType) return false;
+                    if (filters.completed !== undefined && task.completed !== filters.completed) return false;
+                    return true;
+                }).length;
+            }, 0);
+        } 
+        else { // monthly
+            const start = new Date(state.startDate);
+            const monthIndex = labels.indexOf(label);
+            const monthStart = new Date(start.getFullYear(), start.getMonth() + monthIndex, 1);
+            const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
+            
+            count = Object.keys(state.tasks).reduce((sum, weekKey) => {
+                const weekNum = parseInt(weekKey.replace('Week', ''));
+                return state.countedDays.reduce((sumDay, day) => {
+                    const date = utils.calculateDate(weekNum, day);
+                    if (date >= monthStart && date <= monthEnd) {
+                        const tasks = state.tasks[weekKey][day] || [];
+                        return sumDay + tasks.filter(task => {
+                            if (filters.subject && task.subject !== filters.subject) return false;
+                            if (filters.subTopic && task.subTopic !== filters.subTopic) return false;
+                            if (filters.taskType && task.taskType !== filters.taskType) return false;
+                            if (filters.completed !== undefined && task.completed !== filters.completed) return false;
+                            return true;
+                        }).length;
+                    }
+                    return sumDay;
+                }, sum);
+            }, 0);
+        }
+        
+        return count;
+    });
+}
+
+function updateProgressChart() {
+    try {
+        const timeframe = DOM.progressTimeframe.value;
+        const subject = DOM.progressSubject.value;
+        const status = DOM.progressStatus.value;
+        const week = parseInt(DOM.progressWeek.value);
+        let labels = [], datasets = [];
+
+        // Show/hide status dropdown based on subject selection
+        DOM.progressStatus.classList.toggle('hidden', subject === 'all');
+
+        // Set labels based on timeframe
+        if (timeframe === 'daily') {
+            labels = state.countedDays;
+        } else if (timeframe === 'weekly') {
+            const totalWeeks = Math.ceil(state.totalWeekdays / state.countedDays.length);
+            labels = Array.from({ length: totalWeeks }, (_, i) => `Week ${i + 1}`);
+        } else { // monthly
+            const start = new Date(state.startDate);
+            const end = new Date(start);
+            end.setDate(end.getDate() + state.totalWeekdays);
+            let current = new Date(start.getFullYear(), start.getMonth(), 1);
+            labels = [];
+            while (current <= end) {
+                labels.push(current.toLocaleString('en-US', { month: 'short', year: 'numeric' }));
+                current.setMonth(current.getMonth() + 1);
+            }
+        }
+
+        // Prepare datasets based on subject selection
+        if (subject === 'all') {
+            datasets = [
+                {
+                    label: 'Completed',
+                    data: getTaskCounts(timeframe, labels, { completed: true }),
+                    backgroundColor: statusColors.completed,
+                    borderColor: statusColors.completed,
+                    borderWidth: 1
+                },
+                {
+                    label: 'Pending',
+                    data: getTaskCounts(timeframe, labels, { completed: false }),
+                    backgroundColor: statusColors.pending,
+                    borderColor: statusColors.pending,
+                    borderWidth: 1
+                },
+                {
+                    label: 'Not Started',
+                    data: getTaskCounts(timeframe, labels, { completed: null }),
+                    backgroundColor: statusColors.notStarted,
+                    borderColor: statusColors.notStarted,
+                    borderWidth: 1
+                }
+            ];
+        } else {
+            const subTopics = subTopicMap[subject] || [];
+            datasets = subTopics.map(subTopic => ({
+                label: subTopic,
+                data: getTaskCounts(timeframe, labels, { 
+                    subject: subject, 
+                    subTopic: subTopic,
+                    completed: status === 'all' ? undefined : 
+                              status === 'completed' ? true : 
+                              status === 'pending' ? false : null
+                }),
+                backgroundColor: subTopicColors[subTopic] || '#6B7280',
+                borderColor: subTopicColors[subTopic] || '#6B7280',
+                borderWidth: 1
+            }));
+        }
+
+        // Destroy existing chart if it exists
+        if (state.chart) {
+            state.chart.destroy();
+        }
+
+        // Create new chart
+        const ctx = DOM.progressChart.getContext('2d');
+        state.chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: subject === 'all' ? 
+                            'Task Progress - All Subjects' : 
+                            `Task Progress - ${subject}`
+                    },
+                    legend: {
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Tasks'
+                        }
+                    }
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Error updating progress chart:', error);
+        utils.showToast('Failed to update progress chart', 'error');
+    }
+}
+
+function updateSubjectProgressChart() {
+    try {
+        const timeframe = DOM.subjectProgressTimeframe.value;
+        const subject = DOM.subjectProgressSubject.value;
+        const week = parseInt(DOM.subjectProgressWeek.value);
+        let labels = [], data = [];
+
+        DOM.detailedSubjectChart.classList.toggle('hidden', subject === 'all');
+
+        if (timeframe === 'daily') {
+            labels = state.countedDays;
+            if (subject === 'all') {
+                data = Object.keys(subTopicMap).map(subj => {
+                    return labels.map(day => {
+                        const tasks = state.tasks[`Week${week}`]?.[day] || [];
+                        return tasks.filter(t => t.subject === subj).length;
+                    });
+                });
+            } else {
+                data = subTopicMap[subject].map(subTopic => {
+                    return labels.map(day => {
+                        const tasks = state.tasks[`Week${week}`]?.[day] || [];
+                        return tasks.filter(t => t.subTopic === subTopic).length;
+                    });
+                });
+            }
+        } else if (timeframe === 'weekly') {
+            const totalWeeks = Math.ceil(state.totalWeekdays / state.countedDays.length);
+            labels = Array.from({ length: totalWeeks }, (_, i) => `Week ${i + 1}`);
+            if (subject === 'all') {
+                data = Object.keys(subTopicMap).map(subj => {
+                    return labels.map((_, i) => {
+                        const weekKey = `Week${i + 1}`;
+                        return state.countedDays.reduce((sum, day) => {
+                            const tasks = state.tasks[weekKey]?.[day] || [];
+                            return sum + tasks.filter(t => t.subject === subj).length;
+                        }, 0);
+                    });
+                });
+            } else {
+                data = subTopicMap[subject].map(subTopic => {
+                    return labels.map((_, i) => {
+                        const weekKey = `Week${i + 1}`;
+                        return state.countedDays.reduce((sum, day) => {
+                            const tasks = state.tasks[weekKey]?.[day] || [];
+                            return sum + tasks.filter(t => t.subTopic === subTopic).length;
+                        }, 0);
+                    });
+                });
+            }
+        } else {
+            const start = new Date(state.startDate);
+            const end = new Date(start);
+            end.setDate(end.getDate() + state.totalWeekdays);
+            let current = new Date(start.getFullYear(), start.getMonth(), 1);
+            labels = [];
+            while (current <= end) {
+                labels.push(current.toLocaleString('en-US', { month: 'short', year: 'numeric' }));
+                current.setMonth(current.getMonth() + 1);
+            }
+            if (subject === 'all') {
+                data = Object.keys(subTopicMap).map(subj => {
+                    return labels.map((_, i) => {
+                        const monthStart = new Date(start.getFullYear(), start.getMonth() + i, 1);
+                        const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
+                        return Object.keys(state.tasks).reduce((sum, weekKey) => {
+                            const weekNum = parseInt(weekKey.replace('Week', ''));
+                            return state.countedDays.reduce((sumDay, day) => {
+                                const date = utils.calculateDate(weekNum, day);
+                                if (date >= monthStart && date <= monthEnd) {
+                                    const tasks = state.tasks[weekKey][day] || [];
+                                    return sumDay + tasks.filter(t => t.subject === subj).length;
+                                }
+                                return sumDay;
+                            }, sum);
+                        }, 0);
+                    });
+                });
+            } else {
+                data = subTopicMap[subject].map(subTopic => {
+                    return labels.map((_, i) => {
+                        const monthStart = new Date(start.getFullYear(), start.getMonth() + i, 1);
+                        const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
+                        return Object.keys(state.tasks).reduce((sum, weekKey) => {
+                            const weekNum = parseInt(weekKey.replace('Week', ''));
+                            return state.countedDays.reduce((sumDay, day) => {
+                                const date = utils.calculateDate(weekNum, day);
+                                if (date >= monthStart && date <= monthEnd) {
+                                    const tasks = state.tasks[weekKey][day] || [];
+                                    return sumDay + tasks.filter(t => t.subTopic === subTopic).length;
+                                }
+                                return sumDay;
+                            }, sum);
+                        }, 0);
+                    });
+                });
+            }
+        }
+
+        if (state.subjectChart) state.subjectChart.destroy();
+        state.subjectChart = new Chart(DOM.subjectProgressChart, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: (subject === 'all' ? Object.keys(subTopicMap) : subTopicMap[subject]).map((label, i) => ({
+                    label,
+                    data: data[i],
+                    backgroundColor: subject === 'all' ? subjectColors[label] : subTopicColors[label],
+                    borderColor: subject === 'all' ? subjectColors[label] : subTopicColors[label],
+                    borderWidth: 1
+                }))
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'top' } },
+                scales: {
+                    x: { stacked: true },
+                    y: { 
+                        stacked: true,
+                        beginAtZero: true,
+                        title: { display: true, text: 'Number of Tasks' }
+                    }
+                }
+            }
+        });
+
+        if (subject !== 'all') {
+            DOM.detailedSubjectTitle.textContent = `${subject} Sub-Topic Progress`;
+            if (state.detailedSubjectChart) state.detailedSubjectChart.destroy();
+            state.detailedSubjectChart = new Chart(DOM.detailedSubjectProgressChart, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: subTopicMap[subject].map((subTopic, i) => ({
+                        label: subTopic,
+                        data: data[i],
+                        backgroundColor: subTopicColors[subTopic],
+                        borderColor: subTopicColors[subTopic],
+                        borderWidth: 1
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: {
+                        x: { stacked: true },
+                        y: { 
+                            stacked: true,
+                            beginAtZero: true,
+                            title: { display: true, text: 'Number of Tasks' }
+                        }
+                    }
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error updating subject progress chart:', error);
+        utils.showToast('Failed to update subject progress chart', 'error');
+    }
+}
+
+function updateTaskTimeSpentChart() {
+    try {
+        const timeframe = DOM.taskTimeSpentTimeframe.value;
+        const subject = DOM.taskTimeSpentSubject.value;
+        const week = parseInt(DOM.taskTimeSpentWeek.value);
+        let labels = [], data = [];
+
+        DOM.detailedSubjectChart.classList.toggle('hidden', subject === 'all');
+
+        if (timeframe === 'daily') {
+            labels = state.countedDays;
+            if (subject === 'all') {
+                data = Object.keys(subTopicMap).map(subj => {
+                    return labels.map(day => {
+                        const tasks = state.tasks[`Week${week}`]?.[day] || [];
+                        return tasks.reduce((sum, task) => {
+                            if (task.subject === subj) {
+                                return sum + getTaskTimeSpent(task);
+                            }
+                            return sum;
+                        }, 0) / 3600; // Convert to hours
+                    });
+                });
+            } else {
+                data = subTopicMap[subject].map(subTopic => {
+                    return labels.map(day => {
+                        const tasks = state.tasks[`Week${week}`]?.[day] || [];
+                        return tasks.reduce((sum, task) => {
+                            if (task.subject === subject && task.subTopic === subTopic) {
+                                return sum + getTaskTimeSpent(task);
+                            }
+                            return sum;
+                        }, 0) / 3600; // Convert to hours
+                    });
+                });
+            }
+        } else if (timeframe === 'weekly') {
+            const totalWeeks = Math.ceil(state.totalWeekdays / state.countedDays.length);
+            labels = Array.from({ length: totalWeeks }, (_, i) => `Week ${i + 1}`);
+            if (subject === 'all') {
+                data = Object.keys(subTopicMap).map(subj => {
+                    return labels.map((_, i) => {
+                        const weekKey = `Week${i + 1}`;
+                        return state.countedDays.reduce((sum, day) => {
+                            const tasks = state.tasks[weekKey]?.[day] || [];
+                            return sum + tasks.reduce((sumTask, task) => {
+                                if (task.subject === subj) {
+                                    return sumTask + getTaskTimeSpent(task);
+                                }
+                                return sumTask;
+                            }, 0);
+                        }, 0) / 3600; // Convert to hours
+                    });
+                });
+            } else {
+                data = subTopicMap[subject].map(subTopic => {
+                    return labels.map((_, i) => {
+                        const weekKey = `Week${i + 1}`;
+
+                        return state.countedDays.reduce((sum, day) => {
+                            const tasks = state.tasks[weekKey]?.[day] || [];
+                            return sum + tasks.reduce((sumTask, task) => {
+                                if (task.subject === subject && task.subTopic === subTopic) {
+                                    return sumTask + getTaskTimeSpent(task);
+                                }
+                                return sumTask;
+                            }, 0);
+                        }, 0) / 3600; // Convert to hours
+                    });
+                });
+            }
+        } else {
+            const start = new Date(state.startDate);
+            const end = new Date(start);
+            end.setDate(end.getDate() + state.totalWeekdays);
+            let current = new Date(start.getFullYear(), start.getMonth(), 1);
+            labels = [];
+            while (current <= end) {
+                labels.push(current.toLocaleString('en-US', { month: 'short', year: 'numeric' }));
+                current.setMonth(current.getMonth() + 1);
+            }
+            
+            if (subject === 'all') {
+                data = Object.keys(subTopicMap).map(subj => {
+                    return labels.map((_, i) => {
+                        const monthStart = new Date(start.getFullYear(), start.getMonth() + i, 1);
+                        const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
+                        return Object.keys(state.tasks).reduce((sum, weekKey) => {
+                            const weekNum = parseInt(weekKey.replace('Week', ''));
+                            return state.countedDays.reduce((sumDay, day) => {
+                                const date = utils.calculateDate(weekNum, day);
+                                if (date >= monthStart && date <= monthEnd) {
+                                    const tasks = state.tasks[weekKey][day] || [];
+                                    return sumDay + tasks.reduce((sumTask, task) => {
+                                        if (task.subject === subj) {
+                                            return sumTask + getTaskTimeSpent(task);
+                                        }
+                                        return sumTask;
+                                    }, 0);
+                                }
+                                return sumDay;
+                            }, sum);
+                        }, 0) / 3600; // Convert to hours
+                    });
+                });
+            } else {
+                data = subTopicMap[subject].map(subTopic => {
+                    return labels.map((_, i) => {
+                        const monthStart = new Date(start.getFullYear(), start.getMonth() + i, 1);
+                        const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
+                        return Object.keys(state.tasks).reduce((sum, weekKey) => {
+                            const weekNum = parseInt(weekKey.replace('Week', ''));
+                            return state.countedDays.reduce((sumDay, day) => {
+                                const date = utils.calculateDate(weekNum, day);
+                                if (date >= monthStart && date <= monthEnd) {
+                                    const tasks = state.tasks[weekKey][day] || [];
+                                    return sumDay + tasks.reduce((sumTask, task) => {
+                                        if (task.subject === subject && task.subTopic === subTopic) {
+                                            return sumTask + getTaskTimeSpent(task);
+                                        }
+                                        return sumTask;
+                                    }, 0);
+                                }
+                                return sumDay;
+                            }, sum);
+                        }, 0) / 3600; // Convert to hours
+                    });
+                });
+            }
+        }
+
+        // Destroy existing chart if it exists
+        if (state.taskTimeSpentChart) state.taskTimeSpentChart.destroy();
+
+        // Create main chart
+        state.taskTimeSpentChart = new Chart(DOM.taskTimeSpentChart, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: subject === 'all' ? 
+                    Object.keys(subTopicMap).map((subjectName) => ({
+                        label: subjectName,
+                        data: data[Object.keys(subTopicMap).indexOf(subjectName)],
+                        backgroundColor: subjectColors[subjectName],
+                        borderColor: subjectColors[subjectName],
+                        borderWidth: 1
+                    })) : 
+                    (subTopicMap[subject] || []).map((subTopic) => ({
+                        label: subTopic,
+                        data: data[subTopicMap[subject].indexOf(subTopic)],
+                        backgroundColor: subTopicColors[subTopic],
+                        borderColor: subTopicColors[subTopic],
+                        borderWidth: 1
+                    }))
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { 
+                    legend: { position: 'top' },
+                    title: {
+                        display: true,
+                        text: subject === 'all' ? 'Time Spent by Subject' : `${subject} Time Spent by Sub-Topic`
+                    }
+                },
+                scales: {
+                    x: { stacked: true },
+                    y: { 
+                        stacked: true,
+                        beginAtZero: true,
+                        title: { display: true, text: 'Hours Spent' }
+                    }
+                }
+            }
+        });
+
+        if (subject !== 'all') {
+            DOM.detailedSubjectTitle.textContent = `${subject} Sub-Topic Time Spent Breakdown`;
+            
+            if (state.detailedSubjectChart) state.detailedSubjectChart.destroy();
+            
+            state.detailedSubjectChart = new Chart(DOM.detailedSubjectProgressChart, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: (subTopicMap[subject] || []).map((subTopic) => ({
+                        label: subTopic,
+                        data: data[subTopicMap[subject].indexOf(subTopic)],
+                        backgroundColor: subTopicColors[subTopic],
+                        borderColor: subTopicColors[subTopic],
+                        borderWidth: 1
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { position: 'top' },
+                        title: {
+                            display: true,
+                            text: `${subject} Sub-Topic Time Spent`
+                        }
+                    },
+                    scales: {
+                        x: { stacked: false },
+                        y: { 
+                            stacked: false,
+                            beginAtZero: true,
+                            title: { display: true, text: 'Hours Spent' }
+                        }
+                    }
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error updating task time spent chart:', error);
+        utils.showToast('Failed to update time spent chart', 'error');
+    }
+}
+
+function openProgressChartModal() {
+    DOM.progressChartModal.classList.remove('hidden');
+    updateProgressChart();
+}
+
+function openSubjectProgressModal() {
+    DOM.subjectProgressModal.classList.remove('hidden');
+    updateSubjectProgressChart();
+}
+
+function openTaskTimeSpentModal() {
+    DOM.taskTimeSpentModal.classList.remove('hidden');
+    updateTaskTimeSpentChart();
+}
+
+function handleImportFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            utils.importData(data);
+        } catch (error) {
+            utils.showToast('Invalid file format', 'error');
+        }
+    };
+    reader.readAsText(file);
+}
+
+function triggerImport() {
+    DOM.importFileInput.click();
+}
+
+function exportData() {
+    utils.exportData();
+}
+
+function sortTasksDefault(tasks) {
+    return [...tasks].sort((a, b) => {
+        // Running tasks first
+        if (a.timerStatus === 'running' && b.timerStatus !== 'running') return -1;
+        if (b.timerStatus === 'running' && a.timerStatus !== 'running') return 1;
+        
+        // Completed tasks last
+        if (a.completed === true && b.completed !== true) return 1;
+        if (b.completed === true && a.completed !== true) return -1;
+        
+        // Then pending before not started
+        if (a.completed === false && b.completed === null) return -1;
+        if (b.completed === false && a.completed === null) return 1;
+        
+        // Then by time spent (most first)
+        return getTaskTimeSpent(b) - getTaskTimeSpent(a);
+    });
+}
+
+let currentFilter = null; // Track the current active filter
+
+// Update the filterTasksByStatus function
+function filterTasksByStatus(status) {
+    const week = `Week${state.currentWeek}`;
+    const day = state.currentDay;
+    
+    if (!state.tasks[week] || !state.tasks[week][day]) {
+        DOM.taskList.innerHTML = '<p class="text-gray-600 text-center">No tasks for this day</p>';
+        return;
+    }
+
+    let tasks = state.tasks[week][day];
+    
+    // Reset filter if clicking the same status again
+    if (currentFilter === status) {
+        currentFilter = null;
+        updateTasks(); // Show all tasks
+        updateActiveFilterUI();
+        toggleSidebar();
+        return;
+    }
+    
+    currentFilter = status;
+    let filteredTasks = [];
+    
+    switch(status) {
+        case 'completed':
+            filteredTasks = tasks.filter(task => task.completed === true);
+            break;
+        case 'pending':
+            filteredTasks = tasks.filter(task => task.completed === false);
+            break;
+        case 'notStarted':
+            // Explicitly check for null or undefined
+            filteredTasks = tasks.filter(task => task.completed === null || task.completed === undefined);
+            break;
+    }
+
+    renderTasks(filteredTasks, week);
+    updateActiveFilterUI();
+    toggleSidebar();
+}
+
+function updateActiveFilterUI() {
+    // Remove active class from all filter items
+    document.querySelectorAll('.sidebar-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    // Add active class to current filter if one is active
+    if (currentFilter) {
+        const activeFilterItem = document.querySelector(`.sidebar-item[onclick*="${currentFilter}"]`);
+        if (activeFilterItem) {
+            activeFilterItem.classList.add('active');
+        }
+    }
+}
+
+
+
+// Render Tasks - Handles the actual DOM rendering
+function renderTasks(tasks, week) {
+    const isPast = utils.isPastDate(week, state.currentDay);
+    
+    if (tasks.length === 0) {
+        DOM.taskList.innerHTML = '<p class="text-gray-600 text-center">No tasks for this day</p>';
+        return;
+    }
+    
+    DOM.taskList.innerHTML = tasks.map((task, index) => renderTask(task, index, week, isPast)).join('');
+}
+
+// Render Single Task - Creates HTML for a single task card
+function renderTask(task, index, week, isPast) {
+    const statusClass = task.completed === true ? 'green' : task.completed === false ? 'red' : 'white';
+    const statusCircleDisabled = isPast && !state.allowPastActions ? 'disabled' : '';
+    const taskClass = task.completed === true ? 'completed' : 
+                     task.completed === false ? 'pending' : 
+                     task.timerStatus === 'running' ? 'running' : 'not-started';
+    
+    return `
+        <div class="task-card ${taskClass}" data-task-id="${week}-${state.currentDay}-${index}" 
+             draggable="true" 
+             ondragstart="handleDragStart(event, '${week}', '${state.currentDay}', ${index})" 
+             ondragover="handleDragOver(event)" 
+             ondragleave="handleDragLeave(event)" 
+             ondragend="handleDragEnd(event)" 
+             ondrop="handleDrop(event, '${week}', '${state.currentDay}', ${index})"
+             onclick="handleTaskCardDoubleTap('${week}', '${state.currentDay}', ${index})">
+            <div class="task-content">
+                <div class="status-circles">
+                    <div class="status-circle ${statusCircleDisabled} ${statusClass === 'green' ? 'green' : 'white'}" 
+                         title="${statusCircleDisabled ? 'Status disabled for past dates' : 'Mark as Completed'}" 
+                         ${!statusCircleDisabled ? `onclick="markTaskCompleted('${week}', '${state.currentDay}', ${index}, true)"` : ''}></div>
+                    <div class="status-circle ${statusCircleDisabled} ${statusClass === 'red' ? 'red' : 'white'}" 
+                         title="${statusCircleDisabled ? 'Status disabled for past dates' : 'Mark as Pending'}" 
+                         ${!statusCircleDisabled ? `onclick="markTaskCompleted('${week}', '${state.currentDay}', ${index}, false)"` : ''}></div>
+                    <div class="status-circle ${statusCircleDisabled} ${statusClass === 'white' ? 'white' : 'white'}" 
+                         title="${statusCircleDisabled ? 'Status disabled for past dates' : 'Mark as Not Started'}" 
+                         ${!statusCircleDisabled ? `onclick="markTaskCompleted('${week}', '${state.currentDay}', ${index}, null)"` : ''}></div>
+                </div>
+                <div class="task-details">
+                    <p class="subject ${task.subjectColor}">${task.subject}</p>
+                    <p class="sub-topic">${task.subTopic || 'None'}</p>
+                    <p class="topic">${task.topic}</p>
+                    <p class="details">${task.details}</p>
+                    ${task.taskType ? `<span class="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">${task.taskType}</span>` : ''}
+                </div>
+                <div class="task-actions">
+                    ${renderTaskActions(task, index, week, isPast)}
+                </div>
+            </div>
+            <span class="time-spent">${utils.formatTime(getTaskTimeSpent(task))}</span>
+        </div>
+    `;
+}
+
+// Render Task Actions - Creates the action buttons for a task
+function renderTaskActions(task, index, week, isPast) {
+    if (isPast && !state.allowPastActions) {
+        return `
+            <button onclick="duplicateTaskToNextDay('${week}', '${state.currentDay}', ${index})" 
+                    class="relative px-3 py-1 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition duration-300" 
+                    aria-label="Duplicate Task to Next Day">
+                <i class="fas fa-copy"></i>
+                <span class="tooltip">Duplicate to Next Day</span>
+            </button>
+        `;
+    }
+    
+    if (task.timerStatus === 'running') {
+        return `
+            <button onclick="event.stopPropagation(); pauseTaskTimer('${week}', '${state.currentDay}', ${index})" 
+                    class="relative px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition duration-300" 
+                    aria-label="Pause Timer">
+                <i class="fas fa-pause"></i>
+                <span class="tooltip">Pause Timer</span>
+            </button>
+            <button onclick="event.stopPropagation(); stopTaskTimer('${week}', '${state.currentDay}', ${index})" 
+                    class="relative px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-300" 
+                    aria-label="Stop Timer">
+                <i class="fas fa-stop"></i>
+                <span class="tooltip">Stop Timer</span>
+            </button>
+        `;
+    }
+    
+    if (task.timerStatus === 'paused') {
+        return `
+            <button onclick="event.stopPropagation(); startTaskTimer('${week}', '${state.currentDay}', ${index})" 
+                    class="relative px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-300" 
+                    aria-label="Resume Timer">
+                <i class="fas fa-play"></i>
+                <span class="tooltip">Resume Timer</span>
+            </button>
+            <button onclick="event.stopPropagation(); stopTaskTimer('${week}', '${state.currentDay}', ${index})" 
+                    class="relative px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-300" 
+                    aria-label="Stop Timer">
+                <i class="fas fa-stop"></i>
+                <span class="tooltip">Stop Timer</span>
+            </button>
+        `;
+    }
+    
+    return `
+        <button onclick="event.stopPropagation(); startTaskTimer('${week}', '${state.currentDay}', ${index})" 
+                class="relative px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-300" 
+                aria-label="Start Timer">
+            <i class="fas fa-play"></i>
+            <span class="tooltip">Start Timer</span>
+        </button>
+        <button onclick="event.stopPropagation(); showTaskDetails('${week}', '${state.currentDay}', ${index})" 
+                class="relative px-3 py-1 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition duration-300" 
+                aria-label="View Task Details">
+            <i class="fas fa-info-circle"></i>
+            <span class="tooltip">View Details</span>
+        </button>
+        <button onclick="event.stopPropagation(); duplicateTaskToNextDay('${week}', '${state.currentDay}', ${index})" 
+                class="relative px-3 py-1 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition duration-300" 
+                aria-label="Duplicate Task to Next Day">
+            <i class="fas fa-copy"></i>
+            <span class="tooltip">Duplicate to Next Day</span>
+        </button>
+        <button onclick="event.stopPropagation(); showDeleteConfirmation('${week}', '${state.currentDay}', ${index})" 
+                class="relative px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-300" 
+                aria-label="Delete Task">
+            <i class="fas fa-trash-alt"></i>
+            <span class="tooltip">Delete Task</span>
+        </button>
+    `;
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('open');
+}
+
+function focusSearch() {
+    document.getElementById('taskSearch').focus();
+    toggleSidebar();
+}
+
+function updateAIAssistantChat() {
+    try {
+        DOM.aiAssistantChat.innerHTML = state.aiAssistantMessages.map(message => {
+            const messageClass = message.role === 'user' ? 'ai-assistant-user' : 'ai-assistant-bot';
+            return `<div class="ai-assistant-message ${messageClass}">${message.content}</div>`;
+        }).join('');
+        
+        if (state.aiAssistantTyping) {
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'ai-assistant-message ai-assistant-bot typing-indicator';
+            typingIndicator.innerHTML = '<span></span><span></span><span></span>';
+            DOM.aiAssistantChat.appendChild(typingIndicator);
+        }
+        
+        DOM.aiAssistantChat.scrollTop = DOM.aiAssistantChat.scrollHeight;
+    } catch (error) {
+        console.error('Error updating AI assistant chat:', error);
+    }
+}
+
+function sendAIQuery() {
+    try {
+        const query = DOM.aiAssistantInput.value.trim();
+        if (!query) return;
+        
+        // Add user message to chat
+        state.aiAssistantMessages.push({ role: 'user', content: query });
+        utils.storage.save('aiAssistantMessages', state.aiAssistantMessages);
+        DOM.aiAssistantInput.value = '';
+        updateAIAssistantChat();
+        
+        // Show typing indicator
+        state.aiAssistantTyping = true;
+        updateAIAssistantChat();
+        
+        // Simulate AI response (in a real app, this would call an API)
+        setTimeout(() => {
+            state.aiAssistantTyping = false;
+            
+            // Generate AI response based on query
+            let response = '';
+            const lowerQuery = query.toLowerCase();
+            
+            if (lowerQuery.includes('hello') || lowerQuery.includes('hi')) {
+                response = "Hello! How can I assist you with your SSC CGL preparation today?";
+            } else if (lowerQuery.includes('progress') || lowerQuery.includes('how am i doing')) {
+                const week = `Week${state.currentWeek}`;
+                const tasks = state.tasks[week]?.[state.currentDay] || [];
+                const total = tasks.length;
+                const completed = tasks.filter(t => t.completed === true).length;
+                const pending = tasks.filter(t => t.completed === false).length;
+                const notStarted = tasks.filter(t => t.completed === null).length;
+                
+                response = `Your progress for today:\n\n` +
+                           `✅ Completed: ${completed} tasks\n` +
+                           `⏳ Pending: ${pending} tasks\n` +
+                           `📝 Not Started: ${notStarted} tasks\n` +
+                           `Overall completion: ${total > 0 ? Math.round((completed / total) * 100) : 0}%`;
+            } else if (lowerQuery.includes('time spent') || lowerQuery.includes('how much time')) {
+                const week = `Week${state.currentWeek}`;
+                const tasks = state.tasks[week]?.[state.currentDay] || [];
+                const totalTime = tasks.reduce((sum, task) => sum + (getTaskTimeSpent(task) || 0), 0);
+                
+                response = `You've spent ${utils.formatTime(totalTime)} on tasks today.`;
+                
+                // Add breakdown by subject if available
+                const subjectTime = {};
+                tasks.forEach(task => {
+                    const time = getTaskTimeSpent(task);
+                    subjectTime[task.subject] = (subjectTime[task.subject] || 0) + time;
+                });
+                
+                if (Object.keys(subjectTime).length > 0) {
+                    response += "\n\nBreakdown by subject:\n";
+                    Object.entries(subjectTime).forEach(([subject, time]) => {
+                        response += `📚 ${subject}: ${utils.formatTime(time)}\n`;
+                    });
+                }
+            } else if (lowerQuery.includes('subject') && (lowerQuery.includes('focus') || lowerQuery.includes('concentrate'))) {
+                // Analyze which subject needs more attention
+                const subjectStats = {};
+                Object.keys(state.tasks).forEach(week => {
+                    state.baseDays.forEach(day => {
+                        const tasks = state.tasks[week][day] || [];
+                        tasks.forEach(task => {
+                            if (!subjectStats[task.subject]) {
+                                subjectStats[task.subject] = { completed: 0, total: 0 };
+                            }
+                            subjectStats[task.subject].total++;
+                            if (task.completed === true) {
+                                subjectStats[task.subject].completed++;
+                            }
+                        });
+                    });
+                });
+                
+                let lowestCompletion = 100;
+                let subjectToFocus = '';
+                
+                Object.entries(subjectStats).forEach(([subject, stats]) => {
+                    const completion = (stats.completed / stats.total) * 100;
+                    if (completion < lowestCompletion) {
+                        lowestCompletion = completion;
+                        subjectToFocus = subject;
+                    }
+                });
+                
+                if (subjectToFocus) {
+                    response = `Based on your progress, you should focus more on ${subjectToFocus}. ` +
+                               `Your completion rate for this subject is ${Math.round(lowestCompletion)}%, ` +
+                               `which is lower than your other subjects.`;
+                } else {
+                    response = "I don't have enough data to suggest which subject needs more focus. " +
+                               "Keep working on all subjects equally for now.";
+                }
+            } else if (lowerQuery.includes('help') || lowerQuery.includes('advice')) {
+                response = "Here are some study tips for SSC CGL preparation:\n\n" +
+                           "1. Focus on your weak areas but don't neglect your strengths\n" +
+                           "2. Practice previous year question papers regularly\n" +
+                           "3. Take mock tests to improve time management\n" +
+                           "4. Revise formulas and concepts weekly\n" +
+                           "5. Stay updated with current affairs for General Awareness\n\n" +
+                           "Would you like specific advice on any subject?";
+            } else if (lowerQuery.includes('quantitative') || lowerQuery.includes('math')) {
+                response = "For Quantitative Aptitude:\n\n" +
+                           "🔹 Master basic arithmetic operations and shortcuts\n" +
+                           "🔹 Practice percentage, ratio, and profit-loss problems daily\n" +
+                           "🔹 Learn time-saving tricks for algebra and geometry\n" +
+                           "🔹 Focus on data interpretation as it's scoring\n" +
+                           "🔹 Solve at least 20-30 questions daily from different topics";
+            } else if (lowerQuery.includes('reasoning')) {
+                response = "For Reasoning:\n\n" +
+                           "🔹 Practice visual and non-verbal reasoning daily\n" +
+                           "🔹 Learn shortcut methods for syllogisms\n" +
+                           "🔹 Focus on puzzles and seating arrangement\n" +
+                           "🔹 Solve coding-decoding and analogy problems\n" +
+                           "🔹 Time yourself to improve speed";
+            } else if (lowerQuery.includes('english')) {
+                response = "For English:\n\n" +
+                           "🔹 Read newspapers daily to improve vocabulary\n" +
+                           "🔹 Practice grammar rules and error spotting\n" +
+                           "🔹 Learn common idioms and phrases\n" +
+                           "🔹 Solve comprehension passages with time limit\n" +
+                           "🔹 Work on sentence improvement and rearrangement";
+            } else if (lowerQuery.includes('general awareness') || lowerQuery.includes('gk')) {
+                response = "For General Awareness:\n\n" +
+                           "🔹 Read current affairs from last 6-12 months\n" +
+                           "🔹 Focus on history, polity, and geography\n" +
+                           "🔹 Make notes of important dates and events\n" +
+                           "🔹 Practice static GK questions daily\n" +
+                           "🔹 Revise science and economic concepts";
+            } else {
+                response = "I'm here to help with your SSC CGL preparation. You can ask me about:\n\n" +
+                           "📊 Your study progress\n" +
+                           "⏱ Time spent on subjects\n" +
+                           "📚 Subject-specific advice\n" +
+                           "🎯 Areas needing focus\n" +
+                           "💡 General study tips";
+            }
+            
+            state.aiAssistantMessages.push({ role: 'assistant', content: response });
+            utils.storage.save('aiAssistantMessages', state.aiAssistantMessages);
+            updateAIAssistantChat();
+        }, 1500);
+    } catch (error) {
+        console.error('Error sending AI query:', error);
+        state.aiAssistantTyping = false;
+        state.aiAssistantMessages.push({ 
+            role: 'assistant', 
+            content: "Sorry, I encountered an error. Please try again later." 
+        });
+        utils.storage.save('aiAssistantMessages', state.aiAssistantMessages);
+        updateAIAssistantChat();
+    }
+}
+
+function openAIAssistantModal() {
+    try {
+        DOM.aiAssistantModal.classList.remove('hidden');
+        updateAIAssistantChat();
+    } catch (error) {
+        console.error('Error opening AI assistant modal:', error);
+        utils.showToast('Failed to open AI assistant', 'error');
+    }
+}
+
+function closeAIAssistantModal() {
+    try {
+        DOM.aiAssistantModal.classList.add('hidden');
+    } catch (error) {
+        console.error('Error closing AI assistant modal:', error);
+        utils.showToast('Failed to close AI assistant', 'error');
+    }
+}
+
+function checkDayCompletion() {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const week = getWeekForDate(yesterday);
+    const day = utils.getDayOfWeek(yesterday);
+    
+    if (state.tasks[`Week${week}`]?.[day]) {
+        const notStartedTasks = state.tasks[`Week${week}`][day].filter(t => t.completed === null);
+        if (notStartedTasks.length > 0 && state.markPendingOnDayComplete) {
+            showDayCompleteNotification(`Week${week}`, day, notStartedTasks.length);
+        }
+    }
+}
+
+function getWeekForDate(date) {
+    const daysSinceStart = utils.countWeekdaysBetween(state.startDate, date);
+    return Math.min(
+        Math.max(1, Math.ceil(daysSinceStart / state.countedDays.length)),
+        Math.ceil(state.totalWeekdays / state.countedDays.length)
+    );
+}
+
+function setupMidnightCheck() {
+    const now = new Date();
+    const midnight = new Date();
+    midnight.setHours(24, 0, 0, 0);
+    const msUntilMidnight = midnight - now;
+    
+    setTimeout(() => {
+        checkDayCompletion();
+        // Set up the next check
+        setupMidnightCheck();
+    }, msUntilMidnight);
+}
+
+function markPreviousDayNotStartedAsPending() {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const week = getWeekForDate(yesterday);
+    const day = utils.getDayOfWeek(yesterday);
+    
+    if (state.tasks[`Week${week}`]?.[day]) {
+        const notStartedTasks = state.tasks[`Week${week}`][day].filter(t => t.completed === null);
+        if (notStartedTasks.length > 0 && state.markPendingOnDayComplete) {
+            notStartedTasks.forEach(task => {
+                task.completed = false;
+            });
+            utils.storage.save('plannerTasks', state.tasks);
+        }
+    }
+}
+
+
+const Toast = {
+    show: function(message, type = 'success', duration = 3000) {
+        // Create container if it doesn't exist
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            document.body.appendChild(container);
+        }
+
+        // Create toast element - THIS IS WHERE YOU DECLARE const toast
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+            <span>${message}</span>
+            <button class="toast-close">&times;</button>
+        `;
+
+        // Add to container
+        container.appendChild(toast);
+
+        // Force animation to play
+        setTimeout(() => {
+            toast.style.transform = 'translateX(0)';
+        }, 10);
+
+        // Close button handler
+        toast.querySelector('.toast-close').addEventListener('click', () => {
+            this.hide(toast);
+        });
+
+        // Auto-hide if duration specified
+        if (duration > 0) {
+            setTimeout(() => {
+                this.hide(toast);
+            }, duration);
+        }
+
+        // Return the toast element if you want to reference it later
+        return toast;
+    },
+
+    hide: function(toast) {
+        toast.classList.add('hide');
+        toast.addEventListener('animationend', () => {
+            toast.remove();
+        });
+    }
+};
+
+
+function initializeApp() {
+    try {
+        loadData();
+        calculateCurrentWeekAndDay();
+        updateWeeks();
+        updateDays();
+        updateTasks();
+        updateDateDisplay();
+        updateTimeDisplay();
+        updateDeletedTasksList();
+        updateTaskStats();
+        updateDailySummary();
+        updateChartWeekSelectors();
+        markPreviousDayNotStartedAsPending();
+        setupMidnightCheck();
+        
+        // Initialize event listeners
+        DOM.taskSubject.addEventListener('change', updateSubTopicOptions);
+        DOM.subjectProgressModal.addEventListener('click', e => {
+            if (e.target === DOM.subjectProgressModal) closeSubjectProgressModal();
+        });
+        DOM.taskTimeSpentModal.addEventListener('click', e => {
+            if (e.target === DOM.taskTimeSpentModal) closeTaskTimeSpentModal();
+        });
+        DOM.taskSearch.addEventListener('input', debouncedSearch);
+        DOM.taskSearch.addEventListener('keydown', e => {
+            if (e.key === 'Escape') clearSearch();
+        });
+        DOM.importFileInput.addEventListener('change', handleImportFile);
+        DOM.allowPastActions.addEventListener('change', () => {
+            state.allowPastActions = DOM.allowPastActions.checked;
+            utils.storage.save('allowPastActions', state.allowPastActions);
+            updateTasks();
+        });
+        DOM.markPendingOnDayComplete.addEventListener('change', () => {
+            state.markPendingOnDayComplete = DOM.markPendingOnDayComplete.checked;
+            utils.storage.save('markPendingOnDayComplete', state.markPendingOnDayComplete);
+        });
+        DOM.themeToggleButton.addEventListener('click', toggleTheme);
+        DOM.settingsButton.addEventListener('click', toggleEditForm);
+        DOM.aiAssistantButton.addEventListener('click', openAIAssistantModal);
+        DOM.aiAssistantInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendAIQuery();
+        });
+        
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(e) {
+            const sidebar = document.getElementById('sidebar');
+            const mobileButton = document.querySelector('.mobile-menu-button');
+            if (window.innerWidth <= 1024 && 
+                !sidebar.contains(e.target) && 
+                e.target !== mobileButton && 
+                !mobileButton.contains(e.target)) {
+                sidebar.classList.remove('open');
+            }
+        });
+    } catch (error) {
+        console.error('Error in initializeApp:', error);
+        utils.showToast('Failed to initialize app', 'error');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeApp();
+    updateChartWeekSelectors();
+});
+
+function updateChartsSafely() {
+    try {
+        if (DOM.progressChart) updateProgressChart();
+        if (DOM.subjectProgressChart) updateSubjectProgressChart();
+        if (DOM.taskTimeSpentChart) updateTaskTimeSpentChart();
+    } catch (error) {
+        console.error('Chart update error:', error);
+    }
+}
+
+</script>
+</body>
+</html>
+
