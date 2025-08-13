@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2423,54 +2424,50 @@ setStatus(testId, status) {
     }
     
     startMockTest(id) {
-        const mock = this.mocks.find(m => m.id === id);
-        if (!mock) return;
-        
-        // Check if test is scheduled for future date
-        if (mock.isScheduled && mock.scheduledDate) {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            
-            const scheduledDate = new Date(mock.scheduledDate);
-            scheduledDate.setHours(0, 0, 0, 0);
-            
-            if (scheduledDate > today) {
-                this.showNotification(`This test is scheduled for ${new Date(mock.scheduledDate).toLocaleDateString()}. Please wait until the scheduled date.`, 'warning');
-                return;
-            }
+    const mock = this.mocks.find(m => m.id === id);
+    if (!mock) return;
+
+    // Check if test is scheduled for future date
+    if (mock.isScheduled && mock.scheduledDate) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const scheduledDate = new Date(mock.scheduledDate);
+        scheduledDate.setHours(0, 0, 0, 0);
+
+        if (scheduledDate > today) {
+            this.showNotification(`This test is scheduled for ${new Date(mock.scheduledDate).toLocaleDateString()}. Please wait until the scheduled date.`, 'warning');
+            return;
         }
-        
-        // Set status to pending when starting the test
-        mock.status = 'pending';
-        this.saveMocks();
-        
-        // Set current test
-        this.currentTest = mock;
-        
-        // Show test interface
-        this.showTestInterface();
-        
-        // Update test header
-        this.elements.testTitle.textContent = mock.name;
-        
-        // Load content with a slight delay to ensure iframe is ready
-        setTimeout(() => {
-            if (mock.isUrl && mock.url) {
-                this.elements.testIframe.src = mock.url;
-            } else if (mock.files && mock.files.length > 0) {
-                const file = mock.files[0]; // Always use the first file (HTML file)
-                
-                if (file.type === 'pdf') {
-                    // For PDF files, create a data URL
-                    const dataUrl = `data:application/pdf;base64,${file.content}`;
-                    this.elements.testIframe.src = dataUrl;
-                } else {
-                    // For HTML files, use srcdoc
-                    this.elements.testIframe.srcdoc = file.content;
-                }
-            }
-        }, 100);
     }
+
+    // Set status to pending when starting the test
+    mock.status = 'pending';
+    this.saveMocks();
+
+    // Set current test
+    this.currentTest = mock;
+
+    // Open URL in new tab
+    if (mock.isUrl && mock.url) {
+        window.open(mock.url, '_blank');
+        this.showNotification(`${mock.name} opened in new tab`, 'success');
+    } else if (mock.files && mock.files.length > 0) {
+        const file = mock.files[0]; // Always use the first file (HTML file)
+
+        if (file.type === 'pdf') {
+            // For PDF files, create a data URL
+            const dataUrl = `data:application/pdf;base64,${file.content}`;
+            window.open(dataUrl, '_blank');
+            this.showNotification(`${mock.name} opened in new tab`, 'success');
+        } else {
+            // For HTML files, use srcdoc
+            const htmlWindow = window.open('', '_blank');
+            htmlWindow.document.write(file.content);
+            this.showNotification(`${mock.name} opened in new tab`, 'success');
+        }
+    }
+}
     
     showTestInterface() {
         this.hideAllContainers();
